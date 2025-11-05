@@ -1,0 +1,15 @@
+# Add these dependencies to your pubspec.yaml file
+# and run 'flutter pub get' in your terminal.
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.1 # For making HTTP requests to your PHP API
+  google_fonts: ^6.2.1 # For a polished and modern text theme
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

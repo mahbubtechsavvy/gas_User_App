@@ -5,8 +5,6 @@ import 'package:userapp/providers/auth_provider.dart';
 import 'package:userapp/screens/auth/forgot_password_screen.dart';
 import 'package:userapp/screens/auth/registration_screen.dart';
 
-import '../../widgets/google_signin_button.dart';
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -148,36 +146,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text('Login'),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Row(
-                    children: [
-                      Expanded(child: Divider()),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('OR'),
-                      ),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  GoogleSignInButton(
-                    onSuccess: () {
-                      if (mounted) {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => const MainLayout(),
-                          ),
-                        );
-                      }
-                    },
-                    onError: (error) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text(error)));
-                      }
-                    },
                   ),
                   const SizedBox(height: 24),
                   Row(

@@ -3,8 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:userapp/main_layout.dart';
 import 'package:userapp/providers/auth_provider.dart';
 
-import '../../services/google_auth_service.dart';
-
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
 
@@ -49,48 +47,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(auth.error ?? 'Registration failed')),
-      );
-    }
-  }
-
-  Future<void> _signInWithGoogle() async {
-    final auth = context.read<AuthProvider>();
-    if (auth.isLoading) return;
-
-    try {
-      final googleUser = await GoogleAuthService().signInWithGoogle();
-      if (!mounted || googleUser == null) return;
-
-      final authentication = await GoogleAuthService().authenticate(googleUser);
-      if (authentication?.idToken == null || authentication!.idToken!.isEmpty) {
-        throw Exception('Could not obtain Google ID token. Firebase may not be configured.');
-      }
-      final idToken = authentication.idToken!;
-
-      final success = await auth.googleSignIn(
-        googleId: googleUser.id,
-        idToken: idToken,
-        email: googleUser.email,
-        name: googleUser.displayName ?? googleUser.email,
-        phone: '',
-        profilePhoto: googleUser.photoUrl,
-      );
-
-      if (!mounted) return;
-
-      if (success) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainLayout()),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(auth.error ?? 'Google Sign-In failed')),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
       );
     }
   }
@@ -188,33 +144,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     onPressed: auth.isLoading ? null : _register,
                     child: auth.isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Register'),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Row(
-                  children: [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('OR'),
-                    ),
-                    Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Consumer<AuthProvider>(
-                  builder: (context, auth, child) => OutlinedButton.icon(
-                    onPressed: auth.isLoading ? null : _signInWithGoogle,
-                    icon: Image.asset(
-                      'assets/images/google_logo.png',
-                      height: 24,
-                      width: 24,
-                    ),
-                    label: const Text('Continue with Google'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
+                        : const Text('Create Account'),
                   ),
                 ),
               ],

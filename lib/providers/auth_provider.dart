@@ -4,8 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
-import '../services/notification_service.dart';
-import '../services/profile_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
@@ -41,7 +39,6 @@ class AuthProvider extends ChangeNotifier {
       );
       await _saveSession(data);
       _isLoggedIn = true;
-      await _saveFcmToken();
       return true;
     } catch (e) {
       _error = _errorMessage(e);
@@ -79,41 +76,6 @@ class AuthProvider extends ChangeNotifier {
       );
       await _saveSession(data);
       _isLoggedIn = true;
-      await _saveFcmToken();
-      return true;
-    } catch (e) {
-      _error = _errorMessage(e);
-      return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<bool> googleSignIn({
-    required String googleId,
-    required String idToken,
-    required String email,
-    required String name,
-    String? phone,
-    String? profilePhoto,
-  }) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
-    try {
-      final data = await AuthService.googleSignIn(
-        googleId: googleId,
-        idToken: idToken,
-        email: email,
-        name: name,
-        phone: phone,
-        profilePhoto: profilePhoto,
-      );
-      await _saveSession(data);
-      _isLoggedIn = true;
-      await _saveFcmToken();
       return true;
     } catch (e) {
       _error = _errorMessage(e);
@@ -152,18 +114,6 @@ class AuthProvider extends ChangeNotifier {
     await prefs.setString(AppConfig.userIdKey, userId);
     _token = token;
     _userId = userId;
-  }
-
-  Future<void> _saveFcmToken() async {
-    if (_token == null || _token!.isEmpty) return;
-
-    try {
-      final fcmToken = await NotificationService.initialize();
-      if (fcmToken == null || fcmToken.isEmpty) return;
-      await ProfileService.updateFcmToken(_token!, fcmToken);
-    } catch (e) {
-      debugPrint('FCM token save failed: $e');
-    }
   }
 
   static bool _looksLikeEmail(String value) => value.contains('@');

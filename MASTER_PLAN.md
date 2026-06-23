@@ -79,7 +79,7 @@ class AppConfig {
 }
 ```
 
-- [ ] **Step 2: Create ApiService base class**
+- [x] **Step 2: Create ApiService base class**
 
 ```dart
 // lib/services/api_service.dart

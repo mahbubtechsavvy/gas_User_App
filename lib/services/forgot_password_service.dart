@@ -10,11 +10,9 @@ class ForgotPasswordService {
 
   static Future<Map<String, dynamic>> requestReset(String identifier) async {
     final response = await http.post(
-      Uri.parse('${_base}/forgot_password.php'),
+      Uri.parse('$_base/forgot_password.php'),
       headers: ApiService.publicHeaders,
-      body: json.encode({
-        'identifier': identifier.trim(),
-      }),
+      body: json.encode({'identifier': identifier.trim()}),
     );
     return ApiService.handleResponse(response);
   }
@@ -24,12 +22,9 @@ class ForgotPasswordService {
     required String otp,
   }) async {
     final response = await http.post(
-      Uri.parse('${_base}/verify_otp.php'),
+      Uri.parse('$_base/verify_otp.php'),
       headers: ApiService.publicHeaders,
-      body: json.encode({
-        'identifier': identifier.trim(),
-        'otp': otp.trim(),
-      }),
+      body: json.encode({'identifier': identifier.trim(), 'otp': otp.trim()}),
     );
     return ApiService.handleResponse(response);
   }
@@ -40,7 +35,7 @@ class ForgotPasswordService {
     required String newPassword,
   }) async {
     final response = await http.post(
-      Uri.parse('${_base}/reset_password.php'),
+      Uri.parse('$_base/reset_password.php'),
       headers: ApiService.publicHeaders,
       body: json.encode({
         'identifier': identifier.trim(),

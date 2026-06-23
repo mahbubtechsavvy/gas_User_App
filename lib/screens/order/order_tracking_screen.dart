@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:userapp/models/order.dart';
@@ -14,10 +16,25 @@ class OrderTrackingScreen extends StatefulWidget {
 }
 
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
+  Timer? _pollingTimer;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadOrder());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadOrder();
+      // Poll every 20 seconds so the user sees live status updates
+      _pollingTimer = Timer.periodic(
+        const Duration(seconds: 20),
+        (_) => _loadOrder(),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadOrder() async {
@@ -33,10 +50,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       appBar: AppBar(title: const Text('Track Order')),
       body: Consumer<OrderProvider>(
         builder: (context, orderProvider, child) {
-          if (orderProvider.isLoading) {
+          if (orderProvider.isLoading && orderProvider.selectedOrder == null) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (orderProvider.error != null) {
+          if (orderProvider.error != null && orderProvider.selectedOrder == null) {
             return Center(child: Text(orderProvider.error!));
           }
 
@@ -87,7 +104,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: _statusColor(order.orderStatus).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
@@ -108,6 +126,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             Text('Address: ${order.deliveryAddress}'),
             if (order.notes != null && order.notes!.isNotEmpty)
               Text('Notes: ${order.notes}'),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.refresh, size: 12, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  'Auto-refreshes every 20s',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -206,7 +235,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         ),
                       ),
                       child: isCompleted
-                          ? const Icon(Icons.check, size: 16, color: Colors.white)
+                          ? const Icon(Icons.check,
+                              size: 16, color: Colors.white)
                           : null,
                     ),
                     if (!isLast)
@@ -224,7 +254,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     child: Text(
                       _statusLabel(item),
                       style: TextStyle(
-                        fontWeight: isCompleted ? FontWeight.bold : FontWeight.normal,
+                        fontWeight:
+                            isCompleted ? FontWeight.bold : FontWeight.normal,
                         color: isCompleted ? Colors.black : Colors.grey,
                       ),
                     ),

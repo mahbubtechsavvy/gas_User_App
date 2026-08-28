@@ -1,264 +1,270 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:userapp/providers/auth_provider.dart';
-import 'package:userapp/screens/auth/login_screen.dart';
-import 'package:userapp/screens/profile/order_history_screen.dart';
-import 'package:userapp/screens/profile/profile_edit_screen.dart';
-import 'package:userapp/services/profile_service.dart';
+import '../../core/config/app_config.dart';
+import '../../core/i18n/locale_provider.dart';
+import '../../core/theme/app_theme.dart';
+import '../../providers/auth_provider.dart';
+import '../auth/email_entry_screen.dart';
+import '../auth/profile_setup_screen.dart';
+import 'address_book_screen.dart';
+import 'notification_settings_screen.dart';
+import 'support_screen.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends State<ProfileScreen> {
-  Map<String, dynamic>? _profile;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadProfile());
-  }
-
-  Future<void> _loadProfile() async {
-    final token = context.read<AuthProvider>().token;
-    if (token == null || token.isEmpty) return;
-
-    setState(() => _isLoading = true);
-    try {
-      final profile = await ProfileService.getProfile(token);
-      if (!mounted) return;
-      setState(() {
-        _profile = profile;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-      );
-    }
-  }
-
-  Future<void> _logout() async {
-    await context.read<AuthProvider>().logout();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
-  }
-
-  void _copyUniqueId() {
-    final uniqueId = _profile?['unique_id']?.toString();
-    if (uniqueId == null || uniqueId.isEmpty) return;
-    Clipboard.setData(ClipboardData(text: uniqueId));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('User ID copied!')));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Profile'),
-        actions: [
-          if (!_isLoading && _profile != null)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProfileEditScreen(profile: _profile!),
-                  ),
-                );
-                if (result == true) _loadProfile();
+  void _showLanguageDialog(BuildContext context) {
+    final loc = context.read<LocaleProvider>();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(loc.tr('language')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Text('🇧🇩', style: TextStyle(fontSize: 24)),
+              title: const Text('বাংলা (Bangla)'),
+              trailing: loc.locale == 'bn' ? const Icon(Icons.check_circle, color: AppTheme.primary) : null,
+              onTap: () {
+                loc.setLocale('bn');
+                Navigator.pop(ctx);
               },
             ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadProfile,
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _profile == null
-            ? const Center(child: Text('Failed to load profile'))
-            : SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _buildProfileHeader(),
-                    const SizedBox(height: 24),
-                    _buildUniqueIdCard(),
-                    const SizedBox(height: 16),
-                    ListTile(
-                      leading: const Icon(Icons.shopping_bag),
-                      title: const Text('Order History'),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const OrderHistoryScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildInfoSection('Personal Information', [
-                      _buildInfoTile(Icons.person, 'Name', _profile!['name']),
-                      _buildInfoTile(
-                        Icons.phone,
-                        'Mobile',
-                        _profile!['mobile'] ?? _profile!['phone'],
-                      ),
-                      _buildInfoTile(
-                        Icons.email,
-                        'Email',
-                        _profile!['email'] ?? 'Not set',
-                      ),
-                      _buildInfoTile(
-                        Icons.family_restroom,
-                        "Father's Name",
-                        _profile!['father_name'] ?? 'Not set',
-                      ),
-                    ]),
-                    const SizedBox(height: 16),
-                    _buildInfoSection('Address', [
-                      _buildInfoTile(
-                        Icons.location_city,
-                        'Village',
-                        _profile!['village'] ?? 'Not set',
-                      ),
-                      _buildInfoTile(
-                        Icons.home,
-                        'House/Bari',
-                        _profile!['house_name'] ?? 'Not set',
-                      ),
-                    ]),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: _logout,
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Logout'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-      ),
-    );
-  }
-
-  Widget _buildProfileHeader() {
-    final imageUrl = _profile!['profile_image']?.toString();
-    final name = _profile!['name']?.toString() ?? 'User';
-
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 60,
-          backgroundImage: imageUrl != null && imageUrl.isNotEmpty
-              ? NetworkImage(_absoluteImageUrl(imageUrl))
-              : null,
-          child: imageUrl == null || imageUrl.isEmpty
-              ? Text(
-                  name.isEmpty ? 'U' : name[0].toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                  ),
-                )
-              : null,
-        ),
-        const SizedBox(height: 16),
-        Text(name, style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 4),
-        Text(
-          _profile!['email']?.toString() ?? 'No email',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUniqueIdCard() {
-    return Card(
-      color: Colors.blue.shade50,
-      child: ListTile(
-        leading: const Icon(Icons.badge, color: Colors.blue),
-        title: const Text('User ID'),
-        subtitle: Text(
-          _profile!['unique_id']?.toString() ?? 'N/A',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.copy),
-          onPressed: _copyUniqueId,
-          tooltip: 'Copy ID',
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoSection(String title, List<Widget> children) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ListTile(
+              leading: const Text('🇬🇧', style: TextStyle(fontSize: 24)),
+              title: const Text('English'),
+              trailing: loc.locale == 'en' ? const Icon(Icons.check_circle, color: AppTheme.primary) : null,
+              onTap: () {
+                loc.setLocale('en');
+                Navigator.pop(ctx);
+              },
             ),
-            const Divider(),
-            ...children,
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey.shade600),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-                Text(value ?? 'Not set', style: const TextStyle(fontSize: 16)),
-              ],
-            ),
+  void _confirmLogout(BuildContext context) {
+    final loc = context.read<LocaleProvider>();
+    final auth = context.read<AuthProvider>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(loc.tr('logout')),
+        content: Text(loc.tr('logoutConfirm')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(loc.tr('cancel')),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await auth.logout();
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const EmailEntryScreen()),
+                  (route) => false,
+                );
+              }
+            },
+            child: Text(loc.tr('logout')),
           ),
         ],
       ),
     );
   }
 
-  String _absoluteImageUrl(String imageUrl) {
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    return 'https://gaslagbaadmin.gtgroup.cloud/$imageUrl';
+  @override
+  Widget build(BuildContext context) {
+    final loc = context.watch<LocaleProvider>();
+    final auth = context.watch<AuthProvider>();
+    final user = auth.currentUser;
+
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        title: Text(loc.tr('profile')),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // User Info Header Card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: auth.isAuthenticated && user != null
+                    ? Row(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: const BoxDecoration(
+                              color: AppTheme.primaryLight,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.person, color: AppTheme.primary, size: 36),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user.fullName ?? 'Customer',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  user.phone ?? user.email,
+                                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                                ),
+                                if (user.phone != null) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    user.email,
+                                    style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit_outlined, size: 20, color: AppTheme.primary),
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
+                              );
+                            },
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          const Icon(Icons.account_circle, size: 50, color: AppTheme.textMuted),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  loc.isBangla ? 'অতিথি অ্যাকাউন্ট' : 'Guest Account',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  loc.isBangla ? 'অর্ডার সম্পন্ন করতে লগইন করুন' : 'Log in to place orders and save addresses',
+                                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8)),
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const EmailEntryScreen()),
+                              );
+                            },
+                            child: Text(loc.isBangla ? 'লগইন' : 'Log In', style: const TextStyle(fontSize: 12)),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Settings Menu Items
+            Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.location_on_outlined, color: AppTheme.primary),
+                    title: Text(loc.tr('myAddresses'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textMuted),
+                    onTap: () {
+                      if (!auth.isAuthenticated) {
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EmailEntryScreen()));
+                        return;
+                      }
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const AddressBookScreen()),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.language_outlined, color: AppTheme.primary),
+                    title: Text(loc.tr('language'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(loc.isBangla ? 'বাংলা' : 'English', style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textMuted),
+                      ],
+                    ),
+                    onTap: () => _showLanguageDialog(context),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.notifications_outlined, color: AppTheme.primary),
+                    title: Text(loc.tr('notifications'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textMuted),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.headset_mic_outlined, color: AppTheme.primary),
+                    title: Text(loc.tr('support'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textMuted),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SupportScreen()),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            if (auth.isAuthenticated) ...[
+              const SizedBox(height: 16),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.logout, color: AppTheme.danger),
+                  title: Text(
+                    loc.tr('logout'),
+                    style: const TextStyle(color: AppTheme.danger, fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  onTap: () => _confirmLogout(context),
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 32),
+            Text(
+              '${AppConfig.appName} v${AppConfig.appVersion}',
+              style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              loc.tr('tagline'),
+              style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

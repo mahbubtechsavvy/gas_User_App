@@ -1,174 +1,176 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:userapp/models/order.dart';
-import 'package:userapp/providers/auth_provider.dart';
-import 'package:userapp/providers/order_provider.dart';
-import 'package:userapp/screens/order/order_tracking_screen.dart';
-import 'package:userapp/screens/ratings/ratings_screen.dart';
+import '../../core/i18n/locale_provider.dart';
+import '../../core/theme/app_theme.dart';
+import '../../models/order_model.dart';
+import '../../providers/order_provider.dart';
+import '../../widgets/empty_state_view.dart';
+import '../../widgets/money_text.dart';
+import '../../widgets/status_badge.dart';
+import '../home/main_navigation_shell.dart';
+import 'order_tracking_screen.dart';
 
 class OrdersScreen extends StatefulWidget {
-  final String? orderId;
-
-  const OrdersScreen({super.key, this.orderId});
+  const OrdersScreen({super.key});
 
   @override
   State<OrdersScreen> createState() => _OrdersScreenState();
 }
 
-class _OrdersScreenState extends State<OrdersScreen> {
+class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadOrders());
+    _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<OrderProvider>().fetchOrders();
+    });
   }
 
-  Future<void> _loadOrders() async {
-    if (!mounted) return;
-    final token = context.read<AuthProvider>().token;
-    if (token == null || token.isEmpty) return;
-    await context.read<OrderProvider>().loadOrders(token);
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final loc = context.watch<LocaleProvider>();
+    final orderProv = context.watch<OrderProvider>();
+
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Order History'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadOrders,
-          ),
-        ],
+        title: Text(loc.tr('orders')),
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: AppTheme.primary,
+          labelColor: AppTheme.primary,
+          unselectedLabelColor: AppTheme.textMuted,
+          tabs: [
+            Tab(text: loc.tr('activeOrders')),
+            Tab(text: loc.tr('orderHistory')),
+          ],
+        ),
       ),
       body: RefreshIndicator(
-        onRefresh: _loadOrders,
-        child: Consumer<OrderProvider>(
-          builder: (context, orderProvider, child) {
-            if (orderProvider.isLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
+        onRefresh: () => orderProv.fetchOrders(),
+        color: AppTheme.primary,
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildOrderList(context, orderProv.activeOrders, loc, isActive: true),
+            _buildOrderList(context, orderProv.historyOrders, loc, isActive: false),
+          ],
+        ),
+      ),
+    );
+  }
 
-            if (orderProvider.error != null) {
-              return Center(child: Text(orderProvider.error!));
-            }
+  Widget _buildOrderList(
+    BuildContext context,
+    List<OrderModel> orders,
+    LocaleProvider loc, {
+    required bool isActive,
+  }) {
+    if (orders.isEmpty) {
+      return EmptyStateView(
+        icon: Icons.receipt_long_outlined,
+        title: isActive
+            ? (loc.isBangla ? 'কোনো সক্রিয় অর্ডার নেই' : 'No active orders')
+            : (loc.isBangla ? 'কোনো পূর্ববর্তী অর্ডার নেই' : 'No past orders yet'),
+        message: isActive
+            ? (loc.isBangla ? 'নতুন গ্যাস সিলিন্ডার অর্ডার করতে হোম পেজে যান।' : 'Browse gas branches to place a new order.')
+            : (loc.isBangla ? 'আপনার সম্পন্ন হওয়া অর্ডারগুলো এখানে সংরক্ষিত থাকবে।' : 'Your completed and delivered orders will appear here.'),
+        actionText: isActive ? (loc.isBangla ? 'সিলিন্ডার ব্রাউজ করুন' : 'Browse Gas') : null,
+        onAction: isActive
+            ? () {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const MainNavigationShell()),
+                  (route) => false,
+                );
+              }
+            : null,
+      );
+    }
 
-            final orders = orderProvider.orders;
-            if (orders.isEmpty) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Text('No orders found.'),
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: orders.length,
+      itemBuilder: (context, index) {
+        final order = orders[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: InkWell(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => OrderTrackingScreen(orderId: order.id),
                 ),
               );
-            }
-
-            return ListView.separated(
-              padding: const EdgeInsets.all(8),
-              itemCount: orders.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (context, index) => _buildOrderCard(orders[index]),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOrderCard(Order order) {
-    return Card(
-      child: ListTile(
-        title: Text(order.orderNumber),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text('Vendor: ${order.shopName}'),
-            Text('Total: ৳${order.totalAmount.toStringAsFixed(2)}'),
-            if (order.createdAt != null)
-              Text(
-                'Date: ${_formatDate(order.createdAt!)}',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            const SizedBox(height: 4),
-            Text(
-              _statusLabel(order.orderStatus),
-              style: TextStyle(
-                color: _statusColor(order.orderStatus),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.location_on, color: Colors.blue),
-              tooltip: 'Track Order',
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => OrderTrackingScreen(orderId: order.id),
-                  ),
-                );
-              },
-            ),
-            if (order.orderStatus == 'delivered')
-              IconButton(
-                icon: const Icon(Icons.star, color: Colors.amber),
-                tooltip: 'Rate Vendor',
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => RatingsScreen(
-                        orderId: order.id,
-                        vendorId: order.vendorId,
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '#${order.orderNumber}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                       ),
-                    ),
-                  );
-                },
+                      StatusBadge(status: order.status),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${order.vendorName} (${order.branchName})',
+                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${order.items.length} ${loc.isBangla ? 'টি পণ্য' : 'items'} • ${DateFormat('dd MMM, yyyy - hh:mm a').format(order.createdAt)}',
+                    style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Text('${loc.isBangla ? 'সর্বমোট: ' : 'Total: '} ', style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
+                          MoneyText(
+                            money: order.total,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.primary),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            loc.isBangla ? 'বিস্তারিত' : 'Details',
+                            style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.arrow_forward_ios, size: 12, color: AppTheme.primary),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
-          ],
-        ),
-        isThreeLine: true,
-      ),
+            ),
+          ),
+        );
+      },
     );
-  }
-
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
-
-  String _statusLabel(String status) {
-    return status.replaceAll('_', ' ').toUpperCase();
-  }
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'delivered':
-        return Colors.green;
-      case 'cancelled':
-      case 'rejected':
-        return Colors.red;
-      case 'pending':
-        return Colors.orange;
-      default:
-        return Colors.blue;
-    }
   }
 }

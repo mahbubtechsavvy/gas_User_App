@@ -1,116 +1,163 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../core/i18n/locale_provider.dart';
+import '../../core/theme/app_theme.dart';
+import '../../models/notification_model.dart';
+import '../../providers/notification_provider.dart';
+import '../../widgets/empty_state_view.dart';
+import '../order/order_tracking_screen.dart';
 
-class NotificationsScreen extends StatelessWidget {
+class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
+  State<NotificationsScreen> createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends State<NotificationsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NotificationProvider>().fetchNotifications();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final notifications = <Map<String, dynamic>>[];
+    final loc = context.watch<LocaleProvider>();
+    final notifProv = context.watch<NotificationProvider>();
+    final notifications = notifProv.notifications;
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(loc.tr('notifications')),
         actions: [
-          TextButton(
-            onPressed: () {},
-            child: const Text(
-              'Mark all as read',
-              style: TextStyle(color: Colors.white),
+          if (notifications.isNotEmpty)
+            TextButton(
+              onPressed: () => notifProv.markAllAsRead(),
+              child: Text(
+                loc.isBangla ? 'সব পঠিত করুন' : 'Mark all read',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
         ],
       ),
-      body: notifications.isEmpty
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.notifications_off, size: 80, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'No notifications yet',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
-                ],
+      body: RefreshIndicator(
+        onRefresh: () => notifProv.fetchNotifications(),
+        color: AppTheme.primary,
+        child: notifications.isEmpty
+            ? EmptyStateView(
+                icon: Icons.notifications_none,
+                title: loc.isBangla ? 'কোনো নোটিফিকেশন নেই' : 'No notifications',
+                message: loc.isBangla
+                    ? 'আপনার অর্ডারের সব আপডেট এখানে দেখতে পাবেন।'
+                    : 'All order status updates and promo alerts will appear here.',
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: notifications.length,
+                itemBuilder: (context, index) {
+                  final notif = notifications[index];
+                  return _buildNotificationCard(context, notif, notifProv);
+                },
               ),
-            )
-          : ListView.builder(
-              itemCount: notifications.length,
-              itemBuilder: (context, index) {
-                final notification = notifications[index];
-                final isRead = notification['isRead'] as bool;
-                final time = notification['time'] as DateTime;
-
-                return Container(
-                  color: isRead
-                      ? Colors.transparent
-                      : Colors.blue.withValues(alpha: 0.05),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      child: Icon(
-                        _getIconForNotification(
-                          notification['title'] as String,
-                        ),
-                        color: Colors.white,
-                      ),
-                    ),
-                    title: Text(
-                      notification['title'] as String,
-                      style: TextStyle(
-                        fontWeight: isRead
-                            ? FontWeight.normal
-                            : FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text(notification['message'] as String),
-                        const SizedBox(height: 4),
-                        Text(
-                          _formatTime(time),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                    isThreeLine: true,
-                    onTap: () {
-                      // Mark as read and handle notification tap
-                    },
-                  ),
-                );
-              },
-            ),
+      ),
     );
   }
 
-  IconData _getIconForNotification(String title) {
-    if (title.contains('Delivered')) return Icons.check_circle;
-    if (title.contains('Offer')) return Icons.local_offer;
-    if (title.contains('Confirmed')) return Icons.shopping_bag;
-    return Icons.notifications;
-  }
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else {
-      return DateFormat('MMM dd').format(time);
-    }
+  Widget _buildNotificationCard(
+    BuildContext context,
+    NotificationModel notif,
+    NotificationProvider notifProv,
+  ) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      color: notif.isRead ? AppTheme.surface : const Color(0xFFF0F6FF),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: notif.isRead ? AppTheme.border : const Color(0xFFB8D5FF),
+        ),
+      ),
+      child: InkWell(
+        onTap: () {
+          if (!notif.isRead) notifProv.markAsRead(notif.id);
+          final orderId = notif.metadata?['orderId']?.toString();
+          if (orderId != null && orderId.isNotEmpty) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => OrderTrackingScreen(orderId: orderId),
+              ),
+            );
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(14.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: notif.isRead ? Colors.grey.shade100 : AppTheme.primaryLight,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  notif.category == 'ORDER_UPDATE' ? Icons.delivery_dining : Icons.campaign_outlined,
+                  color: notif.isRead ? AppTheme.textMuted : AppTheme.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            notif.title,
+                            style: TextStyle(
+                              fontWeight: notif.isRead ? FontWeight.w600 : FontWeight.bold,
+                              fontSize: 14,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                        ),
+                        if (!notif.isRead)
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppTheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      notif.body,
+                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      DateFormat('dd MMM, hh:mm a').format(notif.createdAt),
+                      style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

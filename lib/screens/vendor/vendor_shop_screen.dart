@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:userapp/models/product.dart';
-import 'package:userapp/providers/auth_provider.dart';
-import 'package:userapp/providers/cart_provider.dart';
-import 'package:userapp/providers/product_provider.dart';
-import 'package:userapp/screens/product/product_details_screen.dart';
+import '../../core/i18n/locale_provider.dart';
+import '../../core/theme/app_theme.dart';
+import '../../models/product_model.dart';
+import '../../models/vendor_branch_model.dart';
+import '../../providers/catalogue_provider.dart';
+import '../../widgets/money_text.dart';
+import '../product/product_details_screen.dart';
 
 class VendorShopScreen extends StatefulWidget {
-  final int vendorId;
-  final String vendorName;
+  final VendorBranchModel branch;
 
-  const VendorShopScreen({
-    super.key,
-    required this.vendorId,
-    required this.vendorName,
-  });
+  const VendorShopScreen({super.key, required this.branch});
 
   @override
   State<VendorShopScreen> createState() => _VendorShopScreenState();
@@ -24,193 +21,225 @@ class _VendorShopScreenState extends State<VendorShopScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadProducts());
-  }
-
-  Future<void> _loadProducts() async {
-    if (!mounted) return;
-    final token = context.read<AuthProvider>().token;
-    if (token == null || token.isEmpty) return;
-    await context.read<ProductProvider>().fetchVendorProducts(
-      token,
-      widget.vendorId,
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CatalogueProvider>().fetchProducts(branchId: widget.branch.id);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final loc = context.watch<LocaleProvider>();
+    final catalogue = context.watch<CatalogueProvider>();
+
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 200,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(widget.vendorName),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Theme.of(context).primaryColor,
-                      Theme.of(context).primaryColor.withValues(alpha: 0.7),
-                    ],
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 40),
-                    const CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        Icons.store,
-                        size: 50,
-                        color: Color(0xFF003496),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.vendorName,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleLarge?.copyWith(color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: Consumer<ProductProvider>(
-              builder: (context, productProvider, child) {
-                if (productProvider.isLoading) {
-                  return SliverToBoxAdapter(
-                    child: const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(48),
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                  );
-                }
-
-                if (productProvider.error != null) {
-                  return SliverToBoxAdapter(
-                    child: Center(child: Text(productProvider.error!)),
-                  );
-                }
-
-                final products = productProvider.vendorProducts;
-                if (products.isEmpty) {
-                  return SliverToBoxAdapter(
-                    child: const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(48),
-                        child: Text('No products available from this vendor.'),
-                      ),
-                    ),
-                  );
-                }
-
-                return SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.75,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) => _buildProductCard(products[index]),
-                    childCount: products.length,
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        title: Text(widget.branch.displayName),
       ),
-    );
-  }
-
-  Widget _buildProductCard(Product product) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => ProductDetailsScreen(product: product),
-          ),
-        );
-      },
-      child: Card(
+      body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Container(
-                color: Colors.grey[200],
-                width: double.infinity,
-                child: ClipRRect(
-                  child: Image.network(
-                    product.imageUrl ?? '',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.propane_tank,
-                      size: 50,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
+            // Branch Header Card
+            Container(
+              color: AppTheme.surface,
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    product.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    '৳${product.effectivePrice.toStringAsFixed(2)} / ${product.unit}',
-                    style: TextStyle(color: Theme.of(context).primaryColor),
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        try {
-                          context.read<CartProvider>().addItem(product);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Added to cart'),
-                              duration: Duration(seconds: 1),
-                            ),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text(e.toString())));
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(double.infinity, 36),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.branch.vendorName,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
                       ),
-                      child: const Text('Add'),
-                    ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: widget.branch.isOpen ? AppTheme.successLight : AppTheme.dangerLight,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          widget.branch.isOpen ? loc.tr('openNow') : loc.tr('closed'),
+                          style: TextStyle(
+                            color: widget.branch.isOpen ? AppTheme.success : AppTheme.danger,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${widget.branch.branchName} • ${widget.branch.address}, ${widget.branch.thana}',
+                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.star, color: Color(0xFFFFB800), size: 18),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${widget.branch.rating.toStringAsFixed(1)} (${widget.branch.totalRatings} ratings)',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.delivery_dining, color: AppTheme.primary, size: 18),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${loc.tr('deliveryFee')}: ',
+                            style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+                          ),
+                          MoneyText(
+                            money: widget.branch.deliveryFee,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
+
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                loc.isBangla ? 'উপলব্ধ গ্যাস সিলিন্ডার ও সামগ্রী' : 'Available LPG Cylinders',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            if (catalogue.isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(40.0),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (catalogue.products.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Center(
+                  child: Column(
+                    children: [
+                      const Icon(Icons.inventory_2_outlined, size: 48, color: AppTheme.textMuted),
+                      const SizedBox(height: 12),
+                      Text(
+                        loc.isBangla
+                            ? 'এই ব্রাঞ্চে বর্তমানে কোনো পণ্য তালিকাভুক্ত নেই'
+                            : 'No products currently listed for this branch',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: AppTheme.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: catalogue.products.length,
+                itemBuilder: (context, index) {
+                  final product = catalogue.products[index];
+                  return _buildProductItem(context, product, loc);
+                },
+              ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductItem(BuildContext context, ProductModel product, LocaleProvider loc) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ProductDetailsScreen(
+                product: product,
+                preselectedBranch: widget.branch,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.propane_tank, color: AppTheme.primary, size: 36),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${product.brand} • ${product.variants.length} ${loc.isBangla ? 'টি অপশন' : 'options'}',
+                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Text(
+                          '${loc.isBangla ? 'মূল্য ' : 'Price '} ',
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                        ),
+                        MoneyText(
+                          money: product.minPrice,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primary,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textMuted),
+            ],
+          ),
         ),
       ),
     );

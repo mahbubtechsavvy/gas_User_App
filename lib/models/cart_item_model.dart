@@ -1,1 +1,1 @@
-export '../providers/cart_provider.dart' show CartItem;
+export 'cart_model.dart';

@@ -3,9 +3,9 @@ import '../config/app_config.dart';
 class ApiEndpoints {
   static String get baseUrl => AppConfig.apiBaseUrl;
 
-  // Auth
-  static String get requestOtp => '$baseUrl/auth/request-otp';
-  static String get verifyOtp => '$baseUrl/auth/verify-otp';
+  // Auth (Email OTP)
+  static String get requestOtp => '$baseUrl/auth/otp/request';
+  static String get verifyOtp => '$baseUrl/auth/otp/verify';
 
   // Current User & Customer Profile
   static String get me => '$baseUrl/me';

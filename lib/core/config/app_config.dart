@@ -2,8 +2,8 @@ class AppConfig {
   static const String appName = 'Gas Lagba';
   static const String appVersion = '1.0.0';
 
-  // API Base URL - default to localhost / standard host, customizable via compile-time define
-  static const String _defaultBaseUrl = 'http://10.0.2.2:3000/api/v1'; // Android emulator localhost
+  // API Base URL - points to live production API by default, customizable via compile-time define
+  static const String _defaultBaseUrl = 'https://gaslagbaapi.gtgroup.cloud/api/v1';
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: _defaultBaseUrl,

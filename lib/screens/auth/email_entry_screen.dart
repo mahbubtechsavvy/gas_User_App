@@ -150,7 +150,7 @@ class _EmailEntryScreenState extends State<EmailEntryScreen> {
                               if (val == null || val.trim().isEmpty) {
                                 return loc.tr('invalidEmail');
                               }
-                              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                              final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
                               if (!emailRegex.hasMatch(val.trim())) {
                                 return loc.tr('invalidEmail');
                               }

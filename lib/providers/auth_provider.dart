@@ -152,7 +152,7 @@ class AuthProvider extends ChangeNotifier {
         ApiEndpoints.verifyOtp,
         body: {
           'email': email.trim().toLowerCase(),
-          'token': token.trim(),
+          'code': token.trim(),
         },
         requiresAuth: false,
       );

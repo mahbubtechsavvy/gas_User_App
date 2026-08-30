@@ -143,6 +143,13 @@ class OrderModel {
   final DateTime createdAt;
   final String? riderName;
   final String? riderPhone;
+  final String? riderPhotoUrl;
+  final String? deliveryOtp;
+  final String? deliveryType;
+  final String? deliveryStatus;
+  final bool isReviewed;
+  final int? reviewRating;
+  final String? reviewComment;
   final List<OrderItemModel> items;
 
   OrderModel({
@@ -165,6 +172,13 @@ class OrderModel {
     required this.createdAt,
     this.riderName,
     this.riderPhone,
+    this.riderPhotoUrl,
+    this.deliveryOtp,
+    this.deliveryType,
+    this.deliveryStatus,
+    this.isReviewed = false,
+    this.reviewRating,
+    this.reviewComment,
     this.items = const [],
   });
 
@@ -182,10 +196,11 @@ class OrderModel {
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     final branch = json['branch'] as Map<String, dynamic>?;
     final vendor = json['vendor'] as Map<String, dynamic>? ?? branch?['vendor'] as Map<String, dynamic>?;
-    final delivery = json['delivery'] as Map<String, dynamic>?;
+    final delivery = json['deliveryInfo'] as Map<String, dynamic>? ?? json['delivery'] as Map<String, dynamic>?;
     final rider = delivery?['rider'] as Map<String, dynamic>?;
     final slot = json['deliverySlot'] as Map<String, dynamic>?;
     final address = json['deliveryAddress'] as Map<String, dynamic>?;
+    final review = json['review'] as Map<String, dynamic>?;
 
     var rawItems = json['items'] as List<dynamic>? ?? [];
     List<OrderItemModel> itemsList =
@@ -211,8 +226,15 @@ class OrderModel {
       deliveryFeePaisa: json['deliveryFeePaisa'] ?? json['delivery_fee_paisa'] ?? 5000,
       totalPaisa: json['totalPaisa'] ?? json['total_paisa'] ?? 0,
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now() : DateTime.now(),
-      riderName: rider?['fullName']?.toString() ?? json['riderName']?.toString(),
-      riderPhone: rider?['phone']?.toString() ?? json['riderPhone']?.toString(),
+      riderName: delivery?['riderName']?.toString() ?? rider?['name']?.toString() ?? rider?['fullName']?.toString() ?? json['riderName']?.toString(),
+      riderPhone: delivery?['riderPhone']?.toString() ?? rider?['phone']?.toString() ?? json['riderPhone']?.toString(),
+      riderPhotoUrl: delivery?['riderPhotoUrl']?.toString() ?? rider?['photoUrl']?.toString() ?? json['riderPhotoUrl']?.toString(),
+      deliveryOtp: delivery?['deliveryOtp']?.toString() ?? json['deliveryOtp']?.toString(),
+      deliveryType: delivery?['deliveryType']?.toString() ?? json['deliveryType']?.toString(),
+      deliveryStatus: delivery?['deliveryStatus']?.toString() ?? json['deliveryStatus']?.toString(),
+      isReviewed: review != null || json['isReviewed'] == true,
+      reviewRating: review?['rating'] is num ? (review!['rating'] as num).toInt() : (json['reviewRating'] is num ? (json['reviewRating'] as num).toInt() : null),
+      reviewComment: review?['comment']?.toString() ?? json['reviewComment']?.toString(),
       items: itemsList,
     );
   }
@@ -238,6 +260,13 @@ class OrderModel {
       'createdAt': createdAt.toIso8601String(),
       'riderName': riderName,
       'riderPhone': riderPhone,
+      'riderPhotoUrl': riderPhotoUrl,
+      'deliveryOtp': deliveryOtp,
+      'deliveryType': deliveryType,
+      'deliveryStatus': deliveryStatus,
+      'isReviewed': isReviewed,
+      'reviewRating': reviewRating,
+      'reviewComment': reviewComment,
       'items': items.map((i) => i.toJson()).toList(),
     };
   }

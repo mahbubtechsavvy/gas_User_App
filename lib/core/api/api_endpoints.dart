@@ -36,6 +36,9 @@ class ApiEndpoints {
   static String get orders => '$baseUrl/me/orders';
   static String order(String id) => '$baseUrl/me/orders/$id';
   static String cancelOrder(String id) => '$baseUrl/me/orders/$id/cancel';
+  static String submitOrderReview(String id) => '$baseUrl/me/orders/$id/reviews';
+  static String reportOrderIssue(String id) => '$baseUrl/me/orders/$id/report';
+  static String submitOrderPayment(String id) => '$baseUrl/me/orders/$id/payment';
   static String orderDelivery(String id) => '$baseUrl/orders/$id/delivery';
 
   // Payments

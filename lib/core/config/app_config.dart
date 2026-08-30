@@ -1,6 +1,7 @@
 class AppConfig {
   static const String appName = 'Gas Lagba';
   static const String appVersion = '1.0.0';
+  static const String appBuildNumber = '1';
 
   // API Base URL - points to live production API by default, customizable via compile-time define
   static const String _defaultBaseUrl = 'https://gaslagbaapi.gtgroup.cloud/api/v1';

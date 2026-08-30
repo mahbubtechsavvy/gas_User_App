@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/i18n/locale_provider.dart';
 import '../../core/theme/app_theme.dart';
@@ -20,6 +21,35 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final _notesController = TextEditingController();
+  final _trxIdController = TextEditingController();
+  String _selectedMethod = 'COD'; // 'COD', 'BKASH', 'NAGAD', 'ROCKET', 'BANK'
+
+  final Map<String, Map<String, String>> _mfsDetails = {
+    'BKASH': {
+      'title': 'bKash Personal / Merchant',
+      'number': '01644274016',
+      'type': 'Send Money / Payment',
+      'instructions': 'Send the exact bill amount to this bKash number and enter TrxID below.',
+    },
+    'NAGAD': {
+      'title': 'Nagad Personal / Merchant',
+      'number': '01644274016',
+      'type': 'Send Money',
+      'instructions': 'Send the exact bill amount to this Nagad number and enter TrxID below.',
+    },
+    'ROCKET': {
+      'title': 'Rocket Personal',
+      'number': '01644274016-8',
+      'type': 'Send Money',
+      'instructions': 'Send money to this Rocket number and enter TrxID below.',
+    },
+    'BANK': {
+      'title': 'City Bank Transfer',
+      'number': '1102938475',
+      'type': 'GT Group / Gas Lagba',
+      'instructions': 'Transfer to City Bank A/C 1102938475 (GT Group) & enter Reference.',
+    },
+  };
 
   @override
   void initState() {
@@ -36,7 +66,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   void dispose() {
     _notesController.dispose();
+    _trxIdController.dispose();
     super.dispose();
+  }
+
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label copied to clipboard!'),
+        backgroundColor: AppTheme.success,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _submitCheckout() async {
@@ -56,7 +99,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    checkoutProv.setNotes(_notesController.text.trim());
+    String noteText = _notesController.text.trim();
+    if (_selectedMethod != 'COD' && _trxIdController.text.trim().isNotEmpty) {
+      final trxNote = 'Payment Method: $_selectedMethod | TrxID: ${_trxIdController.text.trim()}';
+      noteText = noteText.isEmpty ? trxNote : '$noteText ($trxNote)';
+    }
+
+    checkoutProv.setNotes(noteText);
+    checkoutProv.setPaymentMethod(_selectedMethod == 'COD' ? 'COD' : 'ONLINE');
     final branchIds = cartProv.cart.groups.map((g) => g.branchId).toList();
 
     final createdOrders = await checkoutProv.executeCheckout(
@@ -85,6 +135,69 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  Widget _buildPaymentOption({
+    required String id,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+  }) {
+    final isSelected = _selectedMethod == id;
+    return InkWell(
+      onTap: () => setState(() => _selectedMethod = id),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.08) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.shade200,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: isSelected ? color : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              isSelected ? Icons.check_circle_rounded : Icons.radio_button_off,
+              color: isSelected ? color : Colors.grey.shade400,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = context.watch<LocaleProvider>();
@@ -106,6 +219,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           children: [
             // Delivery Address Card
             Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.grey.shade200),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -177,6 +295,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               final slots = checkoutProv.getSlotsForBranch(group.branchId);
 
               return Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: Colors.grey.shade200),
+                ),
                 margin: const EdgeInsets.only(bottom: 12),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -268,50 +391,174 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             const SizedBox(height: 16),
 
             // Payment Method Selector
-            Text(
-              loc.tr('paymentMethod'),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  loc.tr('paymentMethod'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.success.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified_user_outlined, size: 12, color: AppTheme.success),
+                      SizedBox(width: 4),
+                      Text('100% Secure', style: TextStyle(fontSize: 11, color: AppTheme.success, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
 
+            // Payment Options Cards
             Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.payments_outlined, color: AppTheme.primary),
-                    title: Text(loc.tr('cod'), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                    subtitle: Text(
-                      loc.isBangla ? 'সিলিন্ডার গ্রহণ করে নগদ টাকা দিন' : 'Pay in cash when cylinders arrive at your door',
-                      style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.grey.shade200),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  children: [
+                    _buildPaymentOption(
+                      id: 'COD',
+                      title: loc.tr('cod'),
+                      subtitle: loc.isBangla ? 'সিলিন্ডার গ্রহণ করে নগদ টাকা দিন' : 'Pay in cash to the rider upon arrival',
+                      icon: Icons.payments_outlined,
+                      color: Colors.green.shade700,
                     ),
-                    trailing: Icon(
-                      checkoutProv.paymentMethod == 'COD' ? Icons.radio_button_checked : Icons.radio_button_off,
-                      color: checkoutProv.paymentMethod == 'COD' ? AppTheme.primary : AppTheme.textMuted,
+                    const SizedBox(height: 8),
+                    _buildPaymentOption(
+                      id: 'BKASH',
+                      title: 'bKash (বিকাশ)',
+                      subtitle: 'Send Money / Merchant: 01644274016',
+                      icon: Icons.account_balance_wallet_outlined,
+                      color: const Color(0xFFE2136E),
                     ),
-                    onTap: () => checkoutProv.setPaymentMethod('COD'),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.credit_card_outlined, color: AppTheme.primary),
-                    title: Text(loc.tr('digitalPayment'), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                    subtitle: Text(
-                      loc.isBangla ? 'বিকাশ, নগদ, রকেট বা ব্যাংক কার্ড' : 'bKash, Nagad, Rocket, or Debit/Credit card',
-                      style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                    const SizedBox(height: 8),
+                    _buildPaymentOption(
+                      id: 'NAGAD',
+                      title: 'Nagad (নগদ)',
+                      subtitle: 'Send Money: 01644274016',
+                      icon: Icons.flash_on_rounded,
+                      color: const Color(0xFFF7941D),
                     ),
-                    trailing: Icon(
-                      checkoutProv.paymentMethod == 'ONLINE' ? Icons.radio_button_checked : Icons.radio_button_off,
-                      color: checkoutProv.paymentMethod == 'ONLINE' ? AppTheme.primary : AppTheme.textMuted,
+                    const SizedBox(height: 8),
+                    _buildPaymentOption(
+                      id: 'ROCKET',
+                      title: 'Rocket (রকেট)',
+                      subtitle: 'Send Money: 01644274016-8',
+                      icon: Icons.rocket_launch_outlined,
+                      color: const Color(0xFF8C3494),
                     ),
-                    onTap: () => checkoutProv.setPaymentMethod('ONLINE'),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    _buildPaymentOption(
+                      id: 'BANK',
+                      title: 'Bank Transfer (সিটি ব্যাংক)',
+                      subtitle: 'A/C: 1102938475 | GT Group',
+                      icon: Icons.account_balance_outlined,
+                      color: Colors.blue.shade700,
+                    ),
+                  ],
+                ),
               ),
             ),
+
+            // If MFS/Bank selected, show details card
+            if (_selectedMethod != 'COD' && _mfsDetails.containsKey(_selectedMethod)) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.info_outline, color: Colors.blue, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          _mfsDetails[_selectedMethod]!['title']!,
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Account / Number:',
+                              style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                            ),
+                            Text(
+                              _mfsDetails[_selectedMethod]!['number']!,
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                            ),
+                          ],
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () => _copyToClipboard(
+                            _mfsDetails[_selectedMethod]!['number']!,
+                            _mfsDetails[_selectedMethod]!['title']!,
+                          ),
+                          icon: const Icon(Icons.copy, size: 14),
+                          label: const Text('Copy', style: TextStyle(fontSize: 12)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade700,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            minimumSize: Size.zero,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _mfsDetails[_selectedMethod]!['instructions']!,
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _trxIdController,
+                      decoration: InputDecoration(
+                        labelText: 'Transaction ID / Reference (Optional)',
+                        hintText: 'e.g. 9J4K2L8X',
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             const SizedBox(height: 16),
 
             // Special Delivery Notes
             Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.grey.shade200),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
@@ -333,6 +580,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             // Bill Breakdown
             Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.grey.shade200),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -386,7 +638,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             const SizedBox(height: 24),
 
             CustomButton(
-              text: loc.tr('placeOrder'),
+              text: _selectedMethod == 'COD' ? loc.tr('placeOrder') : 'Place Order & Pay Online',
               isLoading: checkoutProv.isLoading,
               icon: Icons.lock_outline,
               onPressed: _submitCheckout,

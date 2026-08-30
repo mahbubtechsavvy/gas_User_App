@@ -11,6 +11,7 @@ import '../../widgets/money_text.dart';
 import '../../widgets/order_timeline_widget.dart';
 import '../../widgets/status_badge.dart';
 import '../ratings/rate_order_dialog.dart';
+import 'report_order_dialog.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final String orderId;
@@ -22,12 +23,30 @@ class OrderTrackingScreen extends StatefulWidget {
 }
 
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
+  final _trxIdController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<OrderProvider>().fetchOrderDetails(widget.orderId);
     });
+  }
+
+  @override
+  void dispose() {
+    _trxIdController.dispose();
+    super.dispose();
+  }
+
+  void _showReportDialog(OrderModel order) {
+    showDialog(
+      context: context,
+      builder: (_) => ReportOrderDialog(
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+      ),
+    );
   }
 
   void _showCancelDialog(OrderModel order) {
@@ -37,6 +56,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(order.canCancelDirectly ? loc.tr('cancelOrder') : loc.tr('requestCancel')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -44,8 +64,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           children: [
             Text(
               order.canCancelDirectly
-                  ? (loc.isBangla ? 'অর্ডারটি এখনও কনফার্ম হয়নি, আপনি এটি সরাসরি বাতিল করতে পারবেন।' : 'This order has not been accepted yet, you can cancel it directly.')
-                  : (loc.isBangla ? 'অর্ডারটি প্রক্রিয়াধীন, আপনার বাতিলের অনুরোধটি ব্রাঞ্চ যাচাই করবে।' : 'The order is in progress. Your cancellation request will be reviewed by the branch.'),
+                  ? (loc.isBangla
+                      ? 'অর্ডারটি এখনও কনফার্ম হয়নি, আপনি এটি সরাসরি বাতিল করতে পারবেন।'
+                      : 'This order has not been accepted yet, you can cancel it directly.')
+                  : (loc.isBangla
+                      ? 'অর্ডারটি প্রক্রিয়াধীন, আপনার বাতিলের অনুরোধটি ব্রাঞ্চ যাচাই করবে।'
+                      : 'The order is in progress. Your cancellation request will be reviewed by the branch.'),
               style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
             ),
             const SizedBox(height: 16),
@@ -54,6 +78,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               decoration: InputDecoration(
                 labelText: loc.tr('cancelReason'),
                 hintText: loc.isBangla ? 'যেমন: অন্য সিলিন্ডার পেয়েছি' : 'e.g. Ordered by mistake',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
           ],
@@ -64,7 +89,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             child: Text(loc.tr('cancel')),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.danger,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             onPressed: () async {
               final reason = reasonController.text.trim();
               Navigator.pop(ctx);
@@ -77,6 +106,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   SnackBar(
                     content: Text(loc.isBangla ? 'বাতিল কার্যক্রম সম্পন্ন হয়েছে' : 'Cancellation processed'),
                     backgroundColor: AppTheme.success,
+                    behavior: SnackBarBehavior.floating,
                   ),
                 );
               }
@@ -108,10 +138,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       );
     }
 
+    final isTerminal = order.status.isTerminal;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: Text('#${order.orderNumber}'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.report_problem_outlined, color: Colors.orange),
+            tooltip: 'Report an Issue',
+            onPressed: () => _showReportDialog(order),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => orderProv.fetchOrderDetails(widget.orderId),
@@ -123,6 +162,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             children: [
               // Header Card
               Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: Colors.grey.shade200),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -131,9 +175,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            order.vendorName,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          Expanded(
+                            child: Text(
+                              order.vendorName,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
                           ),
                           StatusBadge(status: order.status),
                         ],
@@ -145,12 +191,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       ),
                       if (order.branchPhone != null) ...[
                         const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.phone, size: 14, color: AppTheme.primary),
-                            const SizedBox(width: 4),
-                            Text(order.branchPhone!, style: const TextStyle(fontSize: 13, color: AppTheme.primary)),
-                          ],
+                        InkWell(
+                          onTap: () => launchUrl(Uri.parse('tel:${order.branchPhone}')),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.phone, size: 14, color: AppTheme.primary),
+                              const SizedBox(width: 4),
+                              Text(order.branchPhone!, style: const TextStyle(fontSize: 13, color: AppTheme.primary, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
                         ),
                       ],
                     ],
@@ -158,10 +207,103 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ),
               ),
 
+              // Delivery Security Handover OTP Card
+              if (!isTerminal && order.deliveryOtp != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.verified_user_rounded, color: AppTheme.accent, size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  loc.isBangla ? 'ডেলিভারি হ্যান্ডওভার কোড (OTP)' : 'Delivery Handover OTP',
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                Text(
+                                  loc.isBangla
+                                      ? 'সিলিন্ডার ও ওজন যাচাই করার পর রাইডারকে এই কোডটি দিন'
+                                      : 'Give this 4-digit code to the rider ONLY after inspecting seal & weight',
+                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.primary.withValues(alpha: 0.4)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: order.deliveryOtp!.split('').map((digit) {
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                digit,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF0F172A),
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               const SizedBox(height: 16),
 
               // Status Timeline
               Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: Colors.grey.shade200),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
@@ -182,24 +324,50 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               if (order.riderName != null) ...[
                 const SizedBox(height: 16),
                 Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: AppTheme.accentLight,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.delivery_dining, color: AppTheme.accent, size: 24),
+                          child: const Icon(Icons.two_wheeler_rounded, color: AppTheme.accent, size: 24),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(loc.tr('riderDetails'), style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                              Row(
+                                children: [
+                                  Text(
+                                    loc.tr('riderDetails'),
+                                    style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                                  ),
+                                  if (order.deliveryType == 'PLATFORM_RIDER') ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.deepPurple.shade50,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        '🚀 Central Rider',
+                                        style: TextStyle(fontSize: 9, color: Colors.deepPurple, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                               const SizedBox(height: 2),
                               Text(order.riderName!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                               if (order.riderPhone != null)
@@ -209,7 +377,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         ),
                         if (order.riderPhone != null)
                           IconButton(
-                            icon: const Icon(Icons.phone, color: AppTheme.success),
+                            icon: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppTheme.success.withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.phone, color: AppTheme.success, size: 20),
+                            ),
                             onPressed: () {
                               launchUrl(Uri.parse('tel:${order.riderPhone}'));
                             },
@@ -223,6 +398,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               // Scheduled Window / ASAP Info
               const SizedBox(height: 16),
               Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: Colors.grey.shade200),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
@@ -255,6 +435,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               // Delivery Address Card
               const SizedBox(height: 16),
               Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: Colors.grey.shade200),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
@@ -280,6 +465,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               // Items Summary
               const SizedBox(height: 16),
               Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: Colors.grey.shade200),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -362,22 +552,74 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ),
               ),
 
+              // Review Display (if reviewed)
+              if (order.isReviewed) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.amber.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.star_rounded, color: Color(0xFFFFB800), size: 20),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Your Review (${order.reviewRating ?? 5}/5 ⭐)',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF92400E)),
+                          ),
+                        ],
+                      ),
+                      if (order.reviewComment != null && order.reviewComment!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          order.reviewComment!,
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+
               const SizedBox(height: 24),
 
-              // Rate & Review button if delivered
-              if (order.status == OrderStatus.delivered)
+              // Action Buttons Row (Rate, Report, Cancel)
+              if (order.status == OrderStatus.delivered && !order.isReviewed) ...[
                 CustomButton(
                   text: loc.tr('rateVendor'),
-                  icon: Icons.star_border,
+                  icon: Icons.star_rounded,
                   backgroundColor: const Color(0xFFFFB800),
                   textColor: Colors.black,
-                  onPressed: () {
-                    showDialog(
+                  onPressed: () async {
+                    final res = await showDialog(
                       context: context,
                       builder: (_) => RateOrderDialog(order: order),
                     );
+                    if (res == true && mounted) {
+                      orderProv.fetchOrderDetails(widget.orderId);
+                    }
                   },
                 ),
+                const SizedBox(height: 12),
+              ],
+
+              // Dispute / Report Issue Button
+              OutlinedButton.icon(
+                onPressed: () => _showReportDialog(order),
+                icon: const Icon(Icons.report_problem_outlined, size: 18, color: Colors.red),
+                label: const Text('Report an Issue / Dispute', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 46),
+                  side: const BorderSide(color: Colors.red),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
 
               // Cancel Actions
               if (order.canCancelDirectly || order.canRequestCancellation) ...[

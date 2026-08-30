@@ -117,4 +117,111 @@ class OrderProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> submitReview({
+    required String orderId,
+    required int rating,
+    String? comment,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _apiClient.post(
+        ApiEndpoints.submitOrderReview(orderId),
+        body: {
+          'rating': rating,
+          if (comment != null && comment.trim().isNotEmpty) 'comment': comment.trim(),
+        },
+      );
+      await fetchOrderDetails(orderId);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to submit review: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> reportIssue({
+    required String orderId,
+    required String category,
+    required String subject,
+    required String description,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _apiClient.post(
+        ApiEndpoints.reportOrderIssue(orderId),
+        body: {
+          'category': category,
+          'subject': subject,
+          'description': description,
+        },
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to report issue: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> submitPayment({
+    required String orderId,
+    required String paymentMethod,
+    required String transactionId,
+    String? senderNumber,
+    String? notes,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _apiClient.post(
+        ApiEndpoints.submitOrderPayment(orderId),
+        body: {
+          'paymentMethod': paymentMethod,
+          'transactionId': transactionId.trim(),
+          if (senderNumber != null && senderNumber.trim().isNotEmpty) 'senderNumber': senderNumber.trim(),
+          if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
+        },
+      );
+      await fetchOrderDetails(orderId);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to submit payment: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
 }

@@ -202,6 +202,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> updateCustomerProfile({
     required String fullName,
     required String phone,
+    String? avatarKey,
     String? defaultAddressId,
   }) async {
     _isLoading = true;
@@ -223,6 +224,7 @@ class AuthProvider extends ChangeNotifier {
         body: {
           'fullName': fullName.trim(),
           if (formattedPhone.isNotEmpty) 'phone': formattedPhone,
+          if (avatarKey != null && avatarKey.isNotEmpty) 'avatarKey': avatarKey,
         },
       );
 

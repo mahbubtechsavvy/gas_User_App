@@ -16,8 +16,8 @@ class AppConfig {
   static const String defaultAddressKey = 'gas_lagba_default_address';
 
   // Network timeouts
-  static const Duration connectTimeout = Duration(seconds: 15);
-  static const Duration receiveTimeout = Duration(seconds: 15);
+  static const Duration connectTimeout = Duration(seconds: 30);
+  static const Duration receiveTimeout = Duration(seconds: 30);
 
   // Business constants
   static const String defaultCurrencySymbol = '৳';

@@ -85,21 +85,29 @@ class AddressProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    String formattedPhone = phone.trim();
+    if (formattedPhone.startsWith('01')) {
+      formattedPhone = '+88$formattedPhone';
+    } else if (formattedPhone.startsWith('8801')) {
+      formattedPhone = '+$formattedPhone';
+    } else if (!formattedPhone.startsWith('+8801') && formattedPhone.isNotEmpty) {
+      formattedPhone = '+880$formattedPhone';
+    }
+
     try {
       final res = await _apiClient.post(
         ApiEndpoints.addresses,
         body: {
-          'label': label,
-          'recipientName': recipientName,
-          'phone': phone,
-          'division': division,
-          'district': district,
-          'thana': thana,
-          'fullAddress': fullAddress,
-          if (landmark != null) 'landmark': landmark,
+          'label': label.isNotEmpty ? label : 'Home',
+          'recipientName': recipientName.trim().isNotEmpty ? recipientName.trim() : 'Customer',
+          'phone': formattedPhone,
+          'line1': fullAddress.trim().isNotEmpty ? fullAddress.trim() : '$thana, $district',
+          'area': thana.trim().isNotEmpty ? thana.trim() : (district.trim().isNotEmpty ? district.trim() : 'Dhaka'),
+          if (thana.trim().isNotEmpty) 'thana': thana.trim(),
+          'district': district.trim().isNotEmpty ? district.trim() : 'Dhaka',
+          if (landmark != null && landmark.trim().isNotEmpty) 'line2': landmark.trim(),
           if (latitude != null) 'latitude': latitude,
           if (longitude != null) 'longitude': longitude,
-          'isDefault': isDefault,
         },
       );
 

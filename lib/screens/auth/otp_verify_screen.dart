@@ -172,23 +172,23 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                             controller: _otpController,
                             keyboardType: TextInputType.number,
                             textAlign: TextAlign.center,
-                            maxLength: 6,
+                            maxLength: 8,
                             style: const TextStyle(
-                              fontSize: 24,
-                              letterSpacing: 8,
+                              fontSize: 22,
+                              letterSpacing: 4,
                               fontWeight: FontWeight.bold,
                             ),
                             decoration: InputDecoration(
                               counterText: '',
-                              hintText: '• • • • • •',
+                              hintText: 'Enter code',
                               hintStyle: TextStyle(
-                                fontSize: 24,
-                                letterSpacing: 8,
+                                fontSize: 18,
+                                letterSpacing: 2,
                                 color: Colors.grey.shade400,
                               ),
                             ),
                             validator: (val) {
-                              if (val == null || val.trim().length < 6) {
+                              if (val == null || val.trim().length < 6 || val.trim().length > 8) {
                                 return loc.tr('invalidOtp');
                               }
                               return null;

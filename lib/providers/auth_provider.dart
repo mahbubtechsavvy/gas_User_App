@@ -208,13 +208,21 @@ class AuthProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    String formattedPhone = phone.trim();
+    if (formattedPhone.startsWith('01')) {
+      formattedPhone = '+88$formattedPhone';
+    } else if (formattedPhone.startsWith('8801')) {
+      formattedPhone = '+$formattedPhone';
+    } else if (!formattedPhone.startsWith('+8801') && formattedPhone.isNotEmpty) {
+      formattedPhone = '+880$formattedPhone';
+    }
+
     try {
       final res = await _apiClient.patch(
-        ApiEndpoints.meCustomer,
+        ApiEndpoints.me,
         body: {
           'fullName': fullName.trim(),
-          'phone': phone.trim(),
-          if (defaultAddressId != null) 'defaultAddressId': defaultAddressId,
+          if (formattedPhone.isNotEmpty) 'phone': formattedPhone,
         },
       );
 

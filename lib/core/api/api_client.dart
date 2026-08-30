@@ -98,6 +98,11 @@ class ApiClient {
       throw ApiException('No internet connection or server unreachable');
     } on http.ClientException catch (e) {
       throw ApiException('Network error: ${e.message}');
+    } catch (e) {
+      if (e.toString().contains('TimeoutException')) {
+        throw ApiException('Request timed out. Please try again.');
+      }
+      rethrow;
     }
   }
 

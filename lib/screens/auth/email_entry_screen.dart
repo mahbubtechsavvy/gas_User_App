@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import '../../core/i18n/locale_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/ambient_glow_background.dart';
 import '../../widgets/custom_button.dart';
+import '../../widgets/flame_mascot.dart';
 import '../home/main_navigation_shell.dart';
 import '../profile/support_screen.dart';
 import 'otp_verify_screen.dart';
@@ -17,30 +19,72 @@ class EmailEntryScreen extends StatefulWidget {
 
 class _EmailEntryScreenState extends State<EmailEntryScreen> {
   final _emailController = TextEditingController();
+  final _focusNode = FocusNode();
   final _formKey = GlobalKey<FormState>();
+  MascotMood _mood = MascotMood.idle;
+  String? _speech;
+
+  @override
+  void initState() {
+    super.initState();
+    _speech = 'Hi! Ready for gas delivery? 🔥';
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        setState(() {
+          _mood = MascotMood.typing;
+          _speech = 'Type your email below!';
+        });
+      } else {
+        setState(() {
+          _mood = MascotMood.idle;
+          _speech = null;
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
   void _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      setState(() {
+        _mood = MascotMood.error;
+        _speech = 'Please enter a valid email!';
+      });
+      return;
+    }
 
     final auth = context.read<AuthProvider>();
     final email = _emailController.text.trim().toLowerCase();
+
+    setState(() {
+      _mood = MascotMood.thinking;
+      _speech = 'Sending your 8-digit code... 📬';
+    });
+
     final success = await auth.requestOtp(email);
 
     if (!mounted) return;
 
     if (success) {
+      setState(() {
+        _mood = MascotMood.celebrating;
+      });
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => OtpVerifyScreen(email: email),
         ),
       );
     } else if (auth.error != null) {
+      setState(() {
+        _mood = MascotMood.error;
+        _speech = 'Oops, something went wrong!';
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(auth.error!),
@@ -67,6 +111,13 @@ class _EmailEntryScreenState extends State<EmailEntryScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
@@ -95,57 +146,26 @@ class _EmailEntryScreenState extends State<EmailEntryScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Hero Brand Emblem
-                  Center(
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: const Color(0xFFFF6600).withValues(alpha: 0.1),
-                          ),
-                        ),
-                        Container(
-                          width: 76,
-                          height: 76,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [Color(0xFFFF6600), Color(0xFFFF8C38)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color(0x40FF6600),
-                                blurRadius: 20,
-                                offset: Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.local_fire_department,
-                            size: 42,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
+      body: AmbientGlowBackground(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Animated Flame Mascot
+                    Center(
+                      child: FlameMascot(
+                        mood: _mood,
+                        size: 96,
+                        speechBubbleText: _speech,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
                   // Header Titles
                   Text(
@@ -329,6 +349,7 @@ class _EmailEntryScreenState extends State<EmailEntryScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

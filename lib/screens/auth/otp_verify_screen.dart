@@ -6,7 +6,9 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/address_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
+import '../../widgets/ambient_glow_background.dart';
 import '../../widgets/custom_button.dart';
+import '../../widgets/flame_mascot.dart';
 import '../home/main_navigation_shell.dart';
 import 'profile_setup_screen.dart';
 
@@ -21,14 +23,48 @@ class OtpVerifyScreen extends StatefulWidget {
 
 class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
   final _otpController = TextEditingController();
+  final _focusNode = FocusNode();
   final _formKey = GlobalKey<FormState>();
+
   int _secondsRemaining = 60;
   Timer? _timer;
+  MascotMood _mascotMood = MascotMood.idle;
+  String? _speechBubble;
 
   @override
   void initState() {
     super.initState();
     _startCountdown();
+    _speechBubble = 'Check your email!';
+
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        setState(() {
+          _mascotMood = MascotMood.typing;
+          _speechBubble = 'Enter the 8 digits!';
+        });
+      } else {
+        setState(() {
+          _mascotMood = MascotMood.idle;
+          _speechBubble = null;
+        });
+      }
+    });
+
+    _otpController.addListener(() {
+      final len = _otpController.text.length;
+      if (len == 8 || len == 6) {
+        setState(() {
+          _mascotMood = MascotMood.thinking;
+          _speechBubble = 'Ready to verify! ✨';
+        });
+      } else if (len > 0) {
+        setState(() {
+          _mascotMood = MascotMood.typing;
+          _speechBubble = '$len / 8 digits entered';
+        });
+      }
+    });
   }
 
   void _startCountdown() {
@@ -47,22 +83,43 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
   void dispose() {
     _timer?.cancel();
     _otpController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
   void _verify() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      setState(() {
+        _mascotMood = MascotMood.error;
+        _speechBubble = 'Please enter 8 digits!';
+      });
+      return;
+    }
 
     final auth = context.read<AuthProvider>();
     final code = _otpController.text.trim();
+
+    setState(() {
+      _mascotMood = MascotMood.thinking;
+      _speechBubble = 'Verifying with server... ⏳';
+    });
+
     final success = await auth.verifyOtp(widget.email, code);
 
     if (!mounted) return;
 
     if (success) {
+      setState(() {
+        _mascotMood = MascotMood.celebrating;
+        _speechBubble = 'Success! Welcome 🎉';
+      });
+
       // Sync address and cart
       context.read<AddressProvider>().fetchAddresses();
       context.read<CartProvider>().fetchCart();
+
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted) return;
 
       final user = auth.currentUser;
       if (user != null && !user.isProfileComplete) {
@@ -76,13 +133,20 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
           (route) => false,
         );
       }
-    } else if (auth.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(auth.error!),
-          backgroundColor: AppTheme.danger,
-        ),
-      );
+    } else {
+      setState(() {
+        _mascotMood = MascotMood.error;
+        _speechBubble = 'Incorrect code! ❌';
+      });
+
+      if (auth.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(auth.error!),
+            backgroundColor: AppTheme.danger,
+          ),
+        );
+      }
     }
   }
 
@@ -94,9 +158,13 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
 
     if (success) {
       _startCountdown();
+      setState(() {
+        _mascotMood = MascotMood.idle;
+        _speechBubble = 'New code sent! 📬';
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(locText(context, 'A new login code has been sent.', 'নতুন লগইন কোড পাঠানো হয়েছে।')),
+          content: Text(locText(context, 'A new login code has been sent.', 'নতুন ৮-সংখ্যার কোড পাঠানো হয়েছে।')),
           backgroundColor: AppTheme.success,
         ),
       );
@@ -129,91 +197,209 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Icon Header
-                  Center(
-                    child: Container(
-                      width: 76,
-                      height: 76,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFFFF6600).withValues(alpha: 0.1),
+      body: AmbientGlowBackground(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Interactive Flame Mascot Character
+                    Center(
+                      child: FlameMascot(
+                        mood: _mascotMood,
+                        size: 96,
+                        speechBubbleText: _speechBubble,
                       ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.mark_email_read_outlined,
-                          size: 38,
-                          color: Color(0xFFFF6600),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Title
+                    Text(
+                      loc.isBangla ? 'ভেরিফিকেশন কোড লিখুন' : 'Verify Your Email',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Recipient Chip (Responsive with Flexible to prevent overflow)
+                    Center(
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 340),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.email_outlined, size: 14, color: Color(0xFFFF6600)),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                widget.email,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: () => Navigator.pop(context),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF7ED),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  loc.isBangla ? 'বদলান' : 'Edit',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFFF6600),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
-                  // Title
-                  Text(
-                    loc.isBangla ? 'ভেরিফিকেশন কোড লিখুন' : 'Verify Your Email',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
-                      letterSpacing: -0.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Recipient Chip (Responsive with Flexible to prevent overflow)
-                  Center(
-                    child: Container(
-                      constraints: const BoxConstraints(maxWidth: 340),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    // Verification Card
+                    Container(
+                      padding: const EdgeInsets.all(22.0),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.email_outlined, size: 14, color: Color(0xFFFF6600)),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              widget.email,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1E293B),
-                              ),
-                            ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF6600).withValues(alpha: 0.08),
+                            blurRadius: 28,
+                            offset: const Offset(0, 10),
                           ),
-                          const SizedBox(width: 8),
-                          InkWell(
-                            onTap: () => Navigator.pop(context),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFF7ED),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                loc.isBangla ? 'বদলান' : 'Edit',
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                loc.isBangla ? '৮-সংখ্যার কোড' : '8-DIGIT CODE',
                                 style: const TextStyle(
                                   fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFFFF6600),
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF64748B),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              if (_secondsRemaining > 0)
+                                Text(
+                                  loc.isBangla
+                                      ? '$_secondsRemaining সেকেন্ড বাকি'
+                                      : 'Resend in ${_secondsRemaining}s',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFFFF6600),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Monospace OTP input field (Supports 8-digit and 6-digit codes)
+                          TextFormField(
+                            controller: _otpController,
+                            focusNode: _focusNode,
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            maxLength: 8,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 6,
+                              color: Color(0xFF0F172A),
+                            ),
+                            decoration: InputDecoration(
+                              counterText: '',
+                              hintText: '••••••••',
+                              hintStyle: TextStyle(
+                                color: Colors.grey.shade300,
+                                letterSpacing: 6,
+                              ),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(color: Color(0xFFFF6600), width: 2),
+                              ),
+                            ),
+                            validator: (val) {
+                              if (val == null || (val.trim().length != 8 && val.trim().length != 6)) {
+                                return loc.tr('invalidOtp');
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 22),
+
+                          CustomButton(
+                            text: loc.tr('verifyOtp'),
+                            isLoading: auth.isLoading,
+                            icon: Icons.check_circle_outline_rounded,
+                            onPressed: _verify,
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Resend Button
+                          Center(
+                            child: TextButton(
+                              onPressed: _secondsRemaining == 0 ? _resend : null,
+                              child: Text(
+                                loc.tr('resendOtp'),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: _secondsRemaining == 0
+                                      ? const Color(0xFFFF6600)
+                                      : const Color(0xFF94A3B8),
                                 ),
                               ),
                             ),
@@ -221,126 +407,8 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Verification Card
-                  Container(
-                    padding: const EdgeInsets.all(22.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-                          blurRadius: 24,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              loc.isBangla ? '৮-সংখ্যার কোড' : '8-DIGIT CODE',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF64748B),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            if (_secondsRemaining > 0)
-                              Text(
-                                loc.isBangla
-                                    ? '${_secondsRemaining} সেকেন্ড বাকি'
-                                    : 'Resend in ${_secondsRemaining}s',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFFFF6600),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Monospace OTP input field (Supports 8-digit and 6-digit codes)
-                        TextFormField(
-                          controller: _otpController,
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          maxLength: 8,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 6,
-                            color: Color(0xFF0F172A),
-                          ),
-                          decoration: InputDecoration(
-                            counterText: '',
-                            hintText: '••••••••',
-                            hintStyle: TextStyle(
-                              color: Colors.grey.shade300,
-                              letterSpacing: 6,
-                            ),
-                            filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFFFF6600), width: 2),
-                            ),
-                          ),
-                          validator: (val) {
-                            if (val == null || (val.trim().length != 8 && val.trim().length != 6)) {
-                              return loc.tr('invalidOtp');
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 22),
-
-                        CustomButton(
-                          text: loc.tr('verifyOtp'),
-                          isLoading: auth.isLoading,
-                          icon: Icons.check_circle_outline_rounded,
-                          onPressed: _verify,
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Resend Button
-                        Center(
-                          child: TextButton(
-                            onPressed: _secondsRemaining == 0 ? _resend : null,
-                            child: Text(
-                              loc.tr('resendOtp'),
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: _secondsRemaining == 0
-                                    ? const Color(0xFFFF6600)
-                                    : const Color(0xFF94A3B8),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

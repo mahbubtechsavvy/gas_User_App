@@ -5,10 +5,13 @@ import '../../core/i18n/locale_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/product_model.dart';
 import '../../models/vendor_branch_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/catalogue_provider.dart';
 import '../../widgets/custom_button.dart';
+import '../../widgets/flame_mascot.dart';
 import '../../widgets/money_text.dart';
+import '../auth/email_entry_screen.dart';
 import '../cart/cart_screen.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
@@ -139,11 +142,104 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
+  void _showLoginRequiredSheet(BuildContext context, LocaleProvider loc) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(28.0),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 30,
+              offset: Offset(0, -6),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 5,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(height: 20),
+            FlameMascot(
+              mood: MascotMood.idle,
+              size: 80,
+              speechBubbleText: loc.isBangla ? 'স্বাগতম!' : 'Welcome!',
+            ),
+            const SizedBox(height: 16),
+            Text(
+              loc.isBangla ? 'লগইন প্রয়োজন' : 'Sign In Required',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              loc.isBangla
+                  ? 'কার্টে পণ্য যোগ করতে এবং নিরাপদে সিলিন্ডার অর্ডার করতে আপনার একাউন্টে লগইন করুন।'
+                  : 'Please sign in to add LPG cylinders to your cart and place orders.',
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF64748B),
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            CustomButton(
+              text: loc.isBangla ? 'লগইন বা রেজিস্টার করুন' : 'Sign In / Register',
+              icon: Icons.login_rounded,
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const EmailEntryScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                loc.isBangla ? 'পরে করব' : 'Maybe Later',
+                style: const TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _addToCart() async {
     if (_selectedVariant == null) return;
 
-    final cart = context.read<CartProvider>();
+    final auth = context.read<AuthProvider>();
     final loc = context.read<LocaleProvider>();
+
+    if (!auth.isAuthenticated) {
+      _showLoginRequiredSheet(context, loc);
+      return;
+    }
+
+    final cart = context.read<CartProvider>();
 
     final success = await cart.addToCart(
       branch: _branch.id.isNotEmpty ? _branch : null,

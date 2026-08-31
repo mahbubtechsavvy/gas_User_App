@@ -192,20 +192,31 @@ class ApiClient {
     String? errorCode;
 
     if (decodedBody is Map<String, dynamic>) {
-      if (decodedBody['message'] is List) {
+      if (decodedBody['error'] is Map<String, dynamic>) {
+        final errMap = decodedBody['error'] as Map<String, dynamic>;
+        if (errMap['message'] is String && (errMap['message'] as String).isNotEmpty) {
+          errorMessage = errMap['message'] as String;
+        } else if (errMap['message'] is List) {
+          errorMessage = (errMap['message'] as List).join(', ');
+        }
+        errorCode = errMap['code']?.toString();
+      } else if (decodedBody['message'] is List) {
         errorMessage = (decodedBody['message'] as List).join(', ');
       } else if (decodedBody['message'] is String) {
         errorMessage = decodedBody['message'];
       } else if (decodedBody['error'] is String) {
         errorMessage = decodedBody['error'];
       }
-      errorCode = decodedBody['code']?.toString();
+      errorCode ??= decodedBody['code']?.toString();
     } else if (decodedBody is String && decodedBody.isNotEmpty) {
       errorMessage = decodedBody;
     }
 
     if (statusCode == 401) {
       _storageService.clearToken();
+      if (errorMessage == 'An unexpected error occurred' || errorMessage.contains('bearer token') || errorMessage.contains('signature')) {
+        errorMessage = 'Please sign in to continue';
+      }
     }
 
     throw ApiException(

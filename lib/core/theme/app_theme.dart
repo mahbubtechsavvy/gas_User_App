@@ -2,25 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color primary = Color(0xFF003496);
-  static const Color primaryDark = Color(0xFF002266);
-  static const Color primaryLight = Color(0xFFE6EEF9);
-  static const Color accent = Color(0xFFFF6600);
-  static const Color accentLight = Color(0xFFFFF0E6);
+  // Gas Lagba Luxe Brand Palette
+  static const Color primary = Color(0xFFFF6600);
+  static const Color primaryDark = Color(0xFFCC5200);
+  static const Color primaryLight = Color(0xFFFFF4ED);
+  static const Color primaryGlow = Color(0x26FF6600); // 15% opacity
+  
+  static const Color accent = Color(0xFFFF9900);
+  static const Color accentAmber = Color(0xFFFFB800);
+  static const Color accentLight = Color(0xFFFFF9E6);
+  static const Color navyTrust = Color(0xFF003496);
 
   static const Color success = Color(0xFF10B981);
-  static const Color successLight = Color(0xFFE6F7F0);
+  static const Color successLight = Color(0xFFECFDF5);
   static const Color warning = Color(0xFFF59E0B);
   static const Color warningLight = Color(0xFFFEF3C7);
   static const Color danger = Color(0xFFEF4444);
-  static const Color dangerLight = Color(0xFFFEE2E2);
+  static const Color dangerLight = Color(0xFFFEF2F2);
 
   static const Color background = Color(0xFFF8FAFC);
   static const Color surface = Colors.white;
+  static const Color cardDark = Color(0xFF0F172A);
   static const Color textPrimary = Color(0xFF0F172A);
   static const Color textSecondary = Color(0xFF64748B);
   static const Color textMuted = Color(0xFF94A3B8);
   static const Color border = Color(0xFFE2E8F0);
+  static const Color borderLight = Color(0xFFF1F5F9);
 
   static ThemeData get lightTheme {
     final baseTextTheme = GoogleFonts.interTextTheme();

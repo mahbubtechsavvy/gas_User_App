@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/i18n/locale_provider.dart';
-import '../../core/theme/app_theme.dart';
 import '../../providers/cart_provider.dart';
+import '../../widgets/floating_pill_nav_bar.dart';
 import '../cart/cart_screen.dart';
 import '../order/orders_screen.dart';
 import '../profile/profile_screen.dart';
+import '../search/search_screen.dart';
 import 'home_screen.dart';
 
 class MainNavigationShell extends StatefulWidget {
@@ -22,8 +23,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   final List<Widget> _screens = const [
     HomeScreen(),
-    OrdersScreen(),
+    SearchScreen(),
     CartScreen(),
+    OrdersScreen(),
     ProfileScreen(),
   ];
 
@@ -39,45 +41,43 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     final cart = context.watch<CartProvider>();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      extendBody: true, // Allows floating nav bar to overlay cleanly
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
+      bottomNavigationBar: FloatingPillNavBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
           setState(() => _currentIndex = index);
         },
-        backgroundColor: AppTheme.surface,
-        indicatorColor: AppTheme.primaryLight,
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home, color: AppTheme.primary),
-            label: loc.tr('home'),
+        items: [
+          FloatingNavItem(
+            icon: Icons.home_outlined,
+            activeIcon: Icons.home_rounded,
+            label: loc.isBangla ? 'হোম' : 'Home',
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.receipt_long_outlined),
-            selectedIcon: const Icon(Icons.receipt_long, color: AppTheme.primary),
-            label: loc.tr('orders'),
+          FloatingNavItem(
+            icon: Icons.explore_outlined,
+            activeIcon: Icons.explore_rounded,
+            label: loc.isBangla ? 'এক্সপ্লোর' : 'Explore',
           ),
-          NavigationDestination(
-            icon: Badge(
-              isLabelVisible: cart.itemCount > 0,
-              label: Text('${cart.itemCount}'),
-              child: const Icon(Icons.shopping_cart_outlined),
-            ),
-            selectedIcon: Badge(
-              isLabelVisible: cart.itemCount > 0,
-              label: Text('${cart.itemCount}'),
-              child: const Icon(Icons.shopping_cart, color: AppTheme.primary),
-            ),
-            label: loc.tr('cart'),
+          FloatingNavItem(
+            icon: Icons.shopping_cart_outlined,
+            activeIcon: Icons.shopping_cart_rounded,
+            label: loc.isBangla ? 'কার্ট' : 'Cart',
+            badgeCount: cart.itemCount,
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person, color: AppTheme.primary),
-            label: loc.tr('profile'),
+          FloatingNavItem(
+            icon: Icons.receipt_long_outlined,
+            activeIcon: Icons.receipt_long_rounded,
+            label: loc.isBangla ? 'অর্ডার' : 'Orders',
+          ),
+          FloatingNavItem(
+            icon: Icons.person_outline_rounded,
+            activeIcon: Icons.person_rounded,
+            label: loc.isBangla ? 'প্রোফাইল' : 'Profile',
           ),
         ],
       ),

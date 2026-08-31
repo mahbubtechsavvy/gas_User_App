@@ -214,14 +214,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                      colors: [Color(0xFF003496), Color(0xFF1E40AF)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
+                        color: const Color(0xFF003496).withValues(alpha: 0.25),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -282,7 +282,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                 style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w900,
-                                  color: Color(0xFF0F172A),
+                                  color: Color(0xFFFF6600),
                                   letterSpacing: 2,
                                 ),
                               ),
@@ -594,8 +594,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 CustomButton(
                   text: loc.tr('rateVendor'),
                   icon: Icons.star_rounded,
-                  backgroundColor: const Color(0xFFFFB800),
-                  textColor: Colors.black,
+                  backgroundColor: const Color(0xFFFF9900),
+                  textColor: Colors.white,
                   onPressed: () async {
                     final res = await showDialog(
                       context: context,

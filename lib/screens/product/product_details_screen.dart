@@ -116,7 +116,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: Colors.black.withValues(alpha: 0.92),
+        backgroundColor: const Color(0xFF0F2744).withValues(alpha: 0.96),
         insetPadding: EdgeInsets.zero,
         child: Stack(
           alignment: Alignment.center,
@@ -154,14 +154,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       isScrollControlled: true,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(28.0),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: const Color(0xFFFF6600).withValues(alpha: 0.12),
               blurRadius: 30,
-              offset: Offset(0, -6),
+              offset: const Offset(0, -6),
             ),
           ],
         ),
@@ -188,7 +188,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
+                color: Color(0xFF1E293B),
               ),
               textAlign: TextAlign.center,
             ),
@@ -297,7 +297,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF0F172A)),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF1E293B)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -305,13 +305,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF0F172A),
+            color: Color(0xFF1E293B),
             letterSpacing: 0.5,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share_outlined, size: 20, color: Color(0xFF0F172A)),
+            icon: const Icon(Icons.share_outlined, size: 20, color: Color(0xFF1E293B)),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -336,7 +336,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                    color: const Color(0xFFFF6600).withValues(alpha: 0.08),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -408,7 +408,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.75),
+                          color: const Color(0xFF003496).withValues(alpha: 0.85),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Row(
@@ -484,7 +484,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
-                            color: Color(0xFF0F172A),
+                            color: Color(0xFF1E293B),
                             letterSpacing: -0.5,
                           ),
                         ),
@@ -524,7 +524,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
+                      color: Color(0xFF1E293B),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -545,18 +545,20 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: variant?.supplyType == SupplyType.refill
-                                  ? const Color(0xFF0F172A)
+                                  ? const Color(0xFFFF6600)
                                   : Colors.white,
                               border: Border.all(
                                 color: variant?.supplyType == SupplyType.refill
-                                    ? const Color(0xFF0F172A)
+                                    ? const Color(0xFFFF6600)
                                     : const Color(0xFFE2E8F0),
                                 width: 1.5,
                               ),
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.03),
+                                  color: variant?.supplyType == SupplyType.refill
+                                      ? const Color(0xFFFF6600).withValues(alpha: 0.25)
+                                      : const Color(0xFF64748B).withValues(alpha: 0.05),
                                   blurRadius: 8,
                                 ),
                               ],
@@ -570,8 +572,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                       Icons.autorenew_rounded,
                                       size: 18,
                                       color: variant?.supplyType == SupplyType.refill
-                                          ? const Color(0xFFFF6600)
-                                          : const Color(0xFF64748B),
+                                          ? Colors.white
+                                          : const Color(0xFFFF6600),
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
@@ -581,7 +583,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                         fontSize: 13,
                                         color: variant?.supplyType == SupplyType.refill
                                             ? Colors.white
-                                            : const Color(0xFF0F172A),
+                                            : const Color(0xFF1E293B),
                                       ),
                                     ),
                                   ],
@@ -592,7 +594,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: variant?.supplyType == SupplyType.refill
-                                        ? const Color(0xFF94A3B8)
+                                        ? Colors.white.withValues(alpha: 0.85)
                                         : const Color(0xFF64748B),
                                   ),
                                 ),
@@ -617,18 +619,20 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: variant?.supplyType == SupplyType.newCylinder
-                                  ? const Color(0xFF0F172A)
+                                  ? const Color(0xFFFF6600)
                                   : Colors.white,
                               border: Border.all(
                                 color: variant?.supplyType == SupplyType.newCylinder
-                                    ? const Color(0xFF0F172A)
+                                    ? const Color(0xFFFF6600)
                                     : const Color(0xFFE2E8F0),
                                 width: 1.5,
                               ),
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.03),
+                                  color: variant?.supplyType == SupplyType.newCylinder
+                                      ? const Color(0xFFFF6600).withValues(alpha: 0.25)
+                                      : const Color(0xFF64748B).withValues(alpha: 0.05),
                                   blurRadius: 8,
                                 ),
                               ],
@@ -642,8 +646,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                       Icons.add_shopping_cart_rounded,
                                       size: 18,
                                       color: variant?.supplyType == SupplyType.newCylinder
-                                          ? const Color(0xFFFF6600)
-                                          : const Color(0xFF64748B),
+                                          ? Colors.white
+                                          : const Color(0xFFFF6600),
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
@@ -653,7 +657,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                         fontSize: 13,
                                         color: variant?.supplyType == SupplyType.newCylinder
                                             ? Colors.white
-                                            : const Color(0xFF0F172A),
+                                            : const Color(0xFF1E293B),
                                       ),
                                     ),
                                   ],
@@ -664,7 +668,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: variant?.supplyType == SupplyType.newCylinder
-                                        ? const Color(0xFF94A3B8)
+                                        ? Colors.white.withValues(alpha: 0.85)
                                         : const Color(0xFF64748B),
                                   ),
                                 ),
@@ -687,7 +691,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                            color: const Color(0xFFFF6600).withValues(alpha: 0.06),
                             blurRadius: 10,
                           ),
                         ],
@@ -705,7 +709,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 money: variant.effectivePrice,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF0F172A),
+                                  color: Color(0xFF1E293B),
                                 ),
                               ),
                             ],
@@ -723,7 +727,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                   money: variant.deposit,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w800,
-                                    color: Color(0xFF0F172A),
+                                    color: Color(0xFF1E293B),
                                   ),
                                 ),
                               ],
@@ -741,7 +745,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 14,
-                                  color: Color(0xFF0F172A),
+                                  color: Color(0xFF1E293B),
                                 ),
                               ),
                               MoneyText(
@@ -769,7 +773,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         style: const TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 15,
-                          color: Color(0xFF0F172A),
+                          color: Color(0xFF1E293B),
                         ),
                       ),
                       Container(
@@ -782,7 +786,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         child: Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.remove_rounded, size: 18),
+                              icon: const Icon(Icons.remove_rounded, size: 18, color: Color(0xFFFF6600)),
                               onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null,
                             ),
                             Padding(
@@ -792,12 +796,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w900,
-                                  color: Color(0xFF0F172A),
+                                  color: Color(0xFF1E293B),
                                 ),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.add_rounded, size: 18),
+                              icon: const Icon(Icons.add_rounded, size: 18, color: Color(0xFFFF6600)),
                               onPressed: () => setState(() => _quantity++),
                             ),
                           ],
@@ -818,7 +822,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.08),
+              color: const Color(0xFFFF6600).withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, -4),
             ),
@@ -841,7 +845,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
+                        color: Color(0xFFFF6600),
                       ),
                     ),
                   ],

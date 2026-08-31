@@ -176,7 +176,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
-                      color: isSelected ? color : Colors.black87,
+                      color: isSelected ? color : AppTheme.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),

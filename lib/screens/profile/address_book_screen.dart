@@ -63,7 +63,7 @@ class AddressBookScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppTheme.surface,
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -4)),
+                  BoxShadow(color: const Color(0xFFFF6600).withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, -4)),
                 ],
               ),
               child: SafeArea(

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/theme/app_theme.dart';
 import '../models/product_model.dart';
-import '../widgets/money_text.dart';
+import 'money_text.dart';
 
 class LuxeProductCard extends StatelessWidget {
   final ProductModel product;
@@ -26,10 +26,10 @@ class LuxeProductCard extends StatelessWidget {
         return Image.memory(
           bytes,
           fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => _buildFallback(),
+          errorBuilder: (_, __, ___) => _buildFallbackIcon(),
         );
       } catch (_) {
-        return _buildFallback();
+        return _buildFallbackIcon();
       }
     }
 
@@ -41,20 +41,20 @@ class LuxeProductCard extends StatelessWidget {
           if (loadingProgress == null) return child;
           return const Center(
             child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF6600)),
             ),
           );
         },
-        errorBuilder: (_, __, ___) => _buildFallback(),
+        errorBuilder: (_, __, ___) => _buildFallbackIcon(),
       );
     }
 
-    return _buildFallback();
+    return _buildFallbackIcon();
   }
 
-  Widget _buildFallback() {
+  Widget _buildFallbackIcon() {
     return const Icon(
       Icons.propane_tank_rounded,
       size: 64,
@@ -76,9 +76,14 @@ class LuxeProductCard extends StatelessWidget {
           border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+              color: const Color(0xFFFF6600).withValues(alpha: 0.08),
               blurRadius: 16,
               offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: const Color(0xFF64748B).withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -89,9 +94,9 @@ class LuxeProductCard extends StatelessWidget {
             Container(
               height: 140,
               width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(21)),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(21)),
               ),
               child: Stack(
                 children: [
@@ -111,15 +116,9 @@ class LuxeProductCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: const Color(0xFFECFDF5),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 4,
-                          ),
-                        ],
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
@@ -131,7 +130,7 @@ class LuxeProductCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A),
+                              color: Color(0xFF065F46),
                             ),
                           ),
                         ],
@@ -193,7 +192,7 @@ class LuxeProductCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF0F172A),
+                      color: Color(0xFF1E293B),
                       letterSpacing: -0.2,
                     ),
                   ),
@@ -213,7 +212,7 @@ class LuxeProductCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w900,
-                                color: Color(0xFF0F172A),
+                                color: Color(0xFFFF6600),
                               ),
                             ),
                           ],
@@ -228,12 +227,16 @@ class LuxeProductCard extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0F172A),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF6600), Color(0xFFFF8533)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.2),
-                                blurRadius: 6,
+                                color: const Color(0xFFFF6600).withValues(alpha: 0.35),
+                                blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
                             ],

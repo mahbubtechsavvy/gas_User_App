@@ -59,7 +59,7 @@ class GradientPromoBanner extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.25),
+                  color: Colors.white.withValues(alpha: 0.24),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -101,7 +101,7 @@ class GradientPromoBanner extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: gradientColors.first.withValues(alpha: 0.25),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -113,7 +113,7 @@ class GradientPromoBanner extends StatelessWidget {
                       Text(
                         ctaText,
                         style: const TextStyle(
-                          color: Color(0xFF0F172A),
+                          color: Color(0xFFFF6600),
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                         ),
@@ -122,7 +122,7 @@ class GradientPromoBanner extends StatelessWidget {
                       const Icon(
                         Icons.arrow_forward_rounded,
                         size: 14,
-                        color: Color(0xFF0F172A),
+                        color: Color(0xFFFF6600),
                       ),
                     ],
                   ),

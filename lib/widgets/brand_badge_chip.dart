@@ -38,17 +38,17 @@ class BrandBadgeChip extends StatelessWidget {
         margin: const EdgeInsets.only(right: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0F172A) : Colors.white,
+          color: isSelected ? const Color(0xFFFF6600) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
+            color: isSelected ? const Color(0xFFFF6600) : const Color(0xFFE2E8F0),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? const Color(0xFF0F172A).withValues(alpha: 0.18)
-                  : Colors.black.withValues(alpha: 0.03),
+                  ? const Color(0xFFFF6600).withValues(alpha: 0.25)
+                  : const Color(0xFF64748B).withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -61,7 +61,7 @@ class BrandBadgeChip extends StatelessWidget {
               width: 10,
               height: 10,
               decoration: BoxDecoration(
-                color: brandColor,
+                color: isSelected ? Colors.white : brandColor,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
@@ -75,9 +75,9 @@ class BrandBadgeChip extends StatelessWidget {
             Text(
               brandName,
               style: TextStyle(
-                fontSize: 12,
+                color: isSelected ? Colors.white : const Color(0xFF334155),
+                fontSize: 12.5,
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF1E293B),
                 letterSpacing: -0.2,
               ),
             ),

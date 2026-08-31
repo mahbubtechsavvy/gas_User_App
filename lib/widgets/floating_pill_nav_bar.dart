@@ -30,21 +30,25 @@ class FloatingPillNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A), // Deep Slate Midnight
+        color: Colors.white,
         borderRadius: BorderRadius.circular(36),
+        border: Border.all(
+          color: const Color(0xFFFFD4B8),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.28),
+            color: const Color(0xFFFF6600).withValues(alpha: 0.16),
             blurRadius: 24,
-            offset: const Offset(0, 10),
+            offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: const Color(0xFFFF6600).withValues(alpha: 0.12),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF64748B).withValues(alpha: 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -61,20 +65,26 @@ class FloatingPillNavBar extends StatelessWidget {
             },
             behavior: HitTestBehavior.opaque,
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 260),
+              duration: const Duration(milliseconds: 240),
               curve: Curves.easeOutCubic,
               padding: EdgeInsets.symmetric(
-                horizontal: isSelected ? 16 : 12,
-                vertical: 10,
+                horizontal: isSelected ? 16 : 10,
+                vertical: 9,
               ),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFFFF6600) : Colors.transparent,
-                borderRadius: BorderRadius.circular(28),
+                gradient: isSelected
+                    ? const LinearGradient(
+                        colors: [Color(0xFFFF6600), Color(0xFFFF8533)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                borderRadius: BorderRadius.circular(26),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: const Color(0xFFFF6600).withValues(alpha: 0.4),
-                          blurRadius: 12,
+                          color: const Color(0xFFFF6600).withValues(alpha: 0.38),
+                          blurRadius: 10,
                           offset: const Offset(0, 3),
                         ),
                       ]
@@ -89,7 +99,7 @@ class FloatingPillNavBar extends StatelessWidget {
                       Icon(
                         isSelected ? item.activeIcon : item.icon,
                         size: 20,
-                        color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+                        color: isSelected ? Colors.white : const Color(0xFF64748B),
                       ),
                       if (item.badgeCount > 0)
                         Positioned(
@@ -98,7 +108,7 @@ class FloatingPillNavBar extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                             decoration: BoxDecoration(
-                              color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFFF6600),
+                              color: isSelected ? const Color(0xFF003496) : const Color(0xFFFF6600),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
@@ -114,13 +124,13 @@ class FloatingPillNavBar extends StatelessWidget {
                     ],
                   ),
                   if (isSelected) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Text(
                       item.label,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         letterSpacing: -0.2,
                       ),
                     ),

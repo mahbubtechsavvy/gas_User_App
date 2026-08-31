@@ -99,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
+                color: Color(0xFF1E293B),
               ),
             ),
             const SizedBox(height: 8),
@@ -239,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
+                          color: Color(0xFF1E293B),
                           letterSpacing: -0.2,
                         ),
                         maxLines: 1,
@@ -263,21 +263,21 @@ class _HomeScreenState extends State<HomeScreen> {
               margin: const EdgeInsets.symmetric(vertical: 16),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: const Color(0xFFFFF4ED),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: const Color(0xFFFFD4B8)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.language, size: 13, color: Color(0xFF0F172A)),
+                  const Icon(Icons.language, size: 13, color: Color(0xFFFF6600)),
                   const SizedBox(width: 4),
                   Text(
                     loc.isBangla ? 'বাং' : 'EN',
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
+                      color: Color(0xFFFF6600),
                     ),
                   ),
                 ],
@@ -296,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Badge(
               isLabelVisible: notif.unreadCount > 0,
               label: Text('${notif.unreadCount}'),
-              child: const Icon(Icons.notifications_outlined, color: Color(0xFF0F172A)),
+              child: const Icon(Icons.notifications_outlined, color: Color(0xFF1E293B)),
             ),
           ),
           const SizedBox(width: 12),
@@ -329,7 +329,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                          color: const Color(0xFFFF6600).withValues(alpha: 0.05),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -352,10 +352,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
+                            color: const Color(0xFFFFF4ED),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.tune_rounded, size: 16, color: Color(0xFF64748B)),
+                          child: const Icon(Icons.tune_rounded, size: 16, color: Color(0xFFFF6600)),
                         ),
                       ],
                     ),
@@ -381,12 +381,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                          colors: [Color(0xFF003496), Color(0xFF1E40AF)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0F172A).withValues(alpha: 0.25),
+                            color: const Color(0xFF003496).withValues(alpha: 0.25),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -420,7 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(height: 2),
                                 Text(
                                   loc.isBangla ? 'ম্যাপে লাইভ ট্র্যাক করতে ট্যাপ করুন' : 'Tap for live GPS route & PIN',
-                                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                  style: const TextStyle(color: Color(0xFFBFDBFE), fontSize: 11),
                                 ),
                               ],
                             ),
@@ -467,7 +469,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
+                          color: Color(0xFF1E293B),
                           letterSpacing: -0.3,
                         ),
                       ),
@@ -498,16 +500,24 @@ class _HomeScreenState extends State<HomeScreen> {
                           margin: const EdgeInsets.only(right: 8),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFF0F172A) : Colors.white,
+                            color: isSelected ? const Color(0xFFFF6600) : Colors.white,
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
-                              color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
+                              color: isSelected ? const Color(0xFFFF6600) : const Color(0xFFE2E8F0),
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: isSelected
+                                    ? const Color(0xFFFF6600).withValues(alpha: 0.25)
+                                    : const Color(0xFF64748B).withValues(alpha: 0.04),
+                                blurRadius: 6,
+                              ),
+                            ],
                           ),
                           child: Text(
                             isAll ? (loc.isBangla ? 'সব ক্যাটাগরি' : 'All') : category!.localizedName(loc.locale),
                             style: TextStyle(
-                              color: isSelected ? Colors.white : const Color(0xFF1E293B),
+                              color: isSelected ? Colors.white : const Color(0xFF334155),
                               fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                               fontSize: 12,
                             ),
@@ -531,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
+                        color: Color(0xFF1E293B),
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -583,7 +593,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
+                        color: Color(0xFF1E293B),
                         letterSpacing: -0.4,
                       ),
                     ),

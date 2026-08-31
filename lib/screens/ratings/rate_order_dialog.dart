@@ -174,7 +174,7 @@ class _RateOrderDialogState extends State<RateOrderDialog> {
                 children: tags.map((tag) {
                   final isSelected = _selectedTags.contains(tag);
                   return FilterChip(
-                    label: Text(tag, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white : Colors.black87)),
+                    label: Text(tag, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white : AppTheme.textPrimary)),
                     selected: isSelected,
                     selectedColor: AppTheme.primary,
                     checkmarkColor: Colors.white,

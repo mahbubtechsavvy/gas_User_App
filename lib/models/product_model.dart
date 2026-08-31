@@ -150,6 +150,17 @@ class ProductModel {
     return Money.fromPaisa(min);
   }
 
+  String get displayImageUrl {
+    if (imageUrl != null && imageUrl!.isNotEmpty) return imageUrl!;
+    if (images.isNotEmpty && images.first.isNotEmpty) return images.first;
+    final b = brand.toLowerCase();
+    if (b.contains('beximco')) return 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=800&auto=format&fit=crop&q=60';
+    if (b.contains('omera')) return 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=60';
+    if (b.contains('jamuna')) return 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=800&auto=format&fit=crop&q=60';
+    if (b.contains('universal')) return 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=60';
+    return 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&auto=format&fit=crop&q=60';
+  }
+
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     var rawVariants = json['variants'] as List<dynamic>? ?? [];
     List<ProductVariantModel> variantList = rawVariants
@@ -157,7 +168,21 @@ class ProductModel {
         .toList();
 
     var rawImages = json['images'] as List<dynamic>? ?? [];
-    List<String> imageList = rawImages.map((i) => i.toString()).toList();
+    List<String> imageList = [];
+    for (var img in rawImages) {
+      if (img is String && img.isNotEmpty) {
+        imageList.add(img);
+      } else if (img is Map<String, dynamic>) {
+        if (img['url'] != null && img['url'].toString().isNotEmpty) {
+          imageList.add(img['url'].toString());
+        } else if (img['storageKey'] != null && img['storageKey'].toString().isNotEmpty) {
+          imageList.add(img['storageKey'].toString());
+        }
+      }
+    }
+
+    final directImage = json['imageUrl']?.toString() ?? json['image_url']?.toString() ?? json['photoUrl']?.toString();
+    final firstImage = imageList.isNotEmpty ? imageList.first : null;
 
     return ProductModel(
       id: json['id']?.toString() ?? '',
@@ -168,7 +193,7 @@ class ProductModel {
       description: json['description']?.toString() ?? '',
       brand: json['brand']?.toString() ?? 'Gas Lagba',
       unit: json['unit']?.toString() ?? 'kg',
-      imageUrl: json['imageUrl']?.toString() ?? json['image_url']?.toString() ?? (imageList.isNotEmpty ? imageList.first : null),
+      imageUrl: directImage ?? firstImage,
       images: imageList,
       isApproved: json['isApproved'] ?? json['is_approved'] ?? true,
       isActive: json['isActive'] ?? json['is_active'] ?? true,

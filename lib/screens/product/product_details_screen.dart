@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/i18n/locale_provider.dart';
@@ -28,10 +29,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   ProductVariantModel? _selectedVariant;
   int _quantity = 1;
   late VendorBranchModel _branch;
+  late String _activeImageUrl;
 
   @override
   void initState() {
     super.initState();
+    _activeImageUrl = widget.product.displayImageUrl;
+
     if (widget.product.variants.isNotEmpty) {
       _selectedVariant = widget.product.defaultVariant ?? widget.product.variants.first;
     }
@@ -57,6 +61,82 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           district: 'Dhaka',
           thana: 'Gulshan',
         );
+  }
+
+  Widget _buildProductImage(String url) {
+    if (url.startsWith('data:image')) {
+      try {
+        final commaIdx = url.indexOf(',');
+        final base64Str = commaIdx != -1 ? url.substring(commaIdx + 1) : url;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => _buildFallbackIcon(),
+        );
+      } catch (_) {
+        return _buildFallbackIcon();
+      }
+    }
+
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return Image.network(
+        url,
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                  : null,
+              color: AppTheme.primary,
+            ),
+          );
+        },
+        errorBuilder: (_, __, ___) => _buildFallbackIcon(),
+      );
+    }
+
+    return _buildFallbackIcon();
+  }
+
+  Widget _buildFallbackIcon() {
+    return const Center(
+      child: Icon(
+        Icons.propane_tank,
+        size: 96,
+        color: AppTheme.primary,
+      ),
+    );
+  }
+
+  void _showZoomDialog(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black.withValues(alpha: 0.9),
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: _buildProductImage(url),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _addToCart() async {
@@ -106,6 +186,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     final cart = context.watch<CartProvider>();
 
     final variant = _selectedVariant;
+    final allImages = widget.product.images.isNotEmpty
+        ? widget.product.images
+        : [_activeImageUrl];
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -116,19 +199,114 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image / Icon Hero Container
+            // Interactive Hero Image Container
             Container(
               width: double.infinity,
-              height: 200,
-              color: AppTheme.primaryLight,
-              child: const Center(
-                child: Icon(
-                  Icons.propane_tank,
-                  size: 96,
-                  color: AppTheme.primary,
-                ),
+              height: 250,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF1F5F9),
+              ),
+              child: Stack(
+                children: [
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: GestureDetector(
+                        onTap: () => _showZoomDialog(context, _activeImageUrl),
+                        child: Hero(
+                          tag: 'product_image_${widget.product.id}',
+                          child: _buildProductImage(_activeImageUrl),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Verified Genuine Badge
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.75),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.verified, color: Color(0xFF10B981), size: 14),
+                          SizedBox(width: 4),
+                          Text(
+                            '100% Genuine Sealed',
+                            style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Tap to zoom hint
+                  Positioned(
+                    bottom: 10,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.zoom_in, color: Colors.white, size: 14),
+                          SizedBox(width: 4),
+                          Text(
+                            'Tap to zoom',
+                            style: TextStyle(color: Colors.white, fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
+
+            // Multiple Image Thumbnails (if any)
+            if (allImages.length > 1) ...[
+              Container(
+                height: 70,
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: allImages.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) {
+                    final imgUrl = allImages[index];
+                    final isSelected = imgUrl == _activeImageUrl;
+                    return GestureDetector(
+                      onTap: () => setState(() => _activeImageUrl = imgUrl),
+                      child: Container(
+                        width: 54,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isSelected ? AppTheme.primary : AppTheme.border,
+                            width: isSelected ? 2 : 1,
+                          ),
+                          color: const Color(0xFFF8FAFC),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: _buildProductImage(imgUrl),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
 
             Padding(
               padding: const EdgeInsets.all(20.0),
@@ -201,69 +379,173 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           selected: isSelected,
                           selectedColor: AppTheme.primary,
                           backgroundColor: AppTheme.surface,
-                          side: BorderSide(
-                            color: isSelected ? AppTheme.primary : AppTheme.border,
-                          ),
                           onSelected: (selected) {
                             if (selected) {
-                              setState(() => _selectedVariant = v);
+                              setState(() {
+                                _selectedVariant = v;
+                              });
                             }
                           },
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
                   ],
 
-                  // Supply Type Notice & Pricing Breakdown
+                  // Supply Type Selector (Refill vs New Cylinder)
+                  Text(
+                    loc.isBangla ? 'প্যাকেজ ধরন' : 'Supply Type',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            // Find refill variant if exists
+                            final refill = widget.product.variants.firstWhere(
+                              (v) => v.supplyType == SupplyType.refill,
+                              orElse: () => widget.product.variants.first,
+                            );
+                            setState(() => _selectedVariant = refill);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: variant?.supplyType == SupplyType.refill
+                                  ? AppTheme.primaryLight
+                                  : AppTheme.surface,
+                              border: Border.all(
+                                color: variant?.supplyType == SupplyType.refill
+                                    ? AppTheme.primary
+                                    : AppTheme.border,
+                                width: variant?.supplyType == SupplyType.refill ? 2 : 1,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.autorenew,
+                                      size: 18,
+                                      color: variant?.supplyType == SupplyType.refill
+                                          ? AppTheme.primary
+                                          : AppTheme.textMuted,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      loc.isBangla ? 'রিফিল সিলিন্ডার' : 'Refill Exchange',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: variant?.supplyType == SupplyType.refill
+                                            ? AppTheme.primary
+                                            : AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  loc.isBangla ? 'খালি বোতল ফেরত দিন' : 'Exchange empty cylinder',
+                                  style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            // Find new cylinder variant if exists
+                            final newCyl = widget.product.variants.firstWhere(
+                              (v) => v.supplyType == SupplyType.newCylinder,
+                              orElse: () => widget.product.variants.first,
+                            );
+                            setState(() => _selectedVariant = newCyl);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: variant?.supplyType == SupplyType.newCylinder
+                                  ? AppTheme.primaryLight
+                                  : AppTheme.surface,
+                              border: Border.all(
+                                color: variant?.supplyType == SupplyType.newCylinder
+                                    ? AppTheme.primary
+                                    : AppTheme.border,
+                                width: variant?.supplyType == SupplyType.newCylinder ? 2 : 1,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.add_shopping_cart,
+                                      size: 18,
+                                      color: variant?.supplyType == SupplyType.newCylinder
+                                          ? AppTheme.primary
+                                          : AppTheme.textMuted,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      loc.isBangla ? 'নতুন সিলিন্ডার' : 'New Package',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: variant?.supplyType == SupplyType.newCylinder
+                                            ? AppTheme.primary
+                                            : AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  loc.isBangla ? 'গ্যাস + নতুন সিলিন্ডার' : 'Includes cylinder deposit',
+                                  style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Price Breakdown Card
+                  const SizedBox(height: 24),
                   if (variant != null) ...[
                     Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: const BorderSide(color: AppTheme.border),
+                      ),
+                      color: AppTheme.surface,
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  loc.tr('supplyType'),
-                                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: variant.supplyType == SupplyType.newCylinder
-                                        ? AppTheme.accentLight
-                                        : AppTheme.primaryLight,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    variant.supplyType == SupplyType.newCylinder
-                                        ? loc.tr('newCylinder')
-                                        : loc.tr('refill'),
-                                    style: TextStyle(
-                                      color: variant.supplyType == SupplyType.newCylinder
-                                          ? AppTheme.accent
-                                          : AppTheme.primary,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  loc.isBangla ? 'গ্যাসের মূল্য' : 'Gas Refill Price',
-                                  style: const TextStyle(fontSize: 14),
+                                  loc.isBangla ? 'গ্যাস মূল্য' : 'Gas Price',
+                                  style: const TextStyle(color: AppTheme.textSecondary),
                                 ),
                                 MoneyText(
                                   money: variant.effectivePrice,
-                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -273,28 +555,17 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    loc.tr('cylinderDeposit'),
-                                    style: const TextStyle(fontSize: 13, color: AppTheme.accent),
+                                    loc.isBangla ? 'সিলিন্ডার জামানত (ফেরতযোগ্য)' : 'Cylinder Deposit (Refundable)',
+                                    style: const TextStyle(color: AppTheme.textSecondary),
                                   ),
                                   MoneyText(
                                     money: variant.deposit,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                      color: AppTheme.accent,
-                                    ),
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                loc.tr('depositNotice'),
-                                style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                              ),
                             ],
-                            const SizedBox(height: 12),
-                            const Divider(height: 1),
-                            const SizedBox(height: 12),
+                            const Divider(height: 24),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [

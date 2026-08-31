@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/i18n/locale_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../models/product_model.dart';
 import '../../models/vendor_branch_model.dart';
 import '../../providers/address_provider.dart';
 import '../../providers/catalogue_provider.dart';
@@ -10,6 +11,7 @@ import '../../providers/order_provider.dart';
 import '../../widgets/money_text.dart';
 import '../notifications/notifications_screen.dart';
 import '../order/order_tracking_screen.dart';
+import '../product/product_details_screen.dart';
 import '../profile/address_book_screen.dart';
 import '../search/search_screen.dart';
 import '../vendor/vendor_shop_screen.dart';
@@ -367,6 +369,124 @@ class _HomeScreenState extends State<HomeScreen> {
                     return _buildBranchCard(context, branch, loc);
                   },
                 ),
+
+              // Available Gas Cylinders & Products Section
+              if (catalogue.products.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        loc.isBangla ? 'গ্যাস সিলিন্ডার ও সামগ্রী' : 'Available Gas Cylinders',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        '${catalogue.products.length} ${loc.isBangla ? 'টি পণ্য' : 'items'}',
+                        style: const TextStyle(fontSize: 12, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: catalogue.products.length,
+                  itemBuilder: (context, index) {
+                    final product = catalogue.products[index];
+                    return _buildHomeProductCard(context, product, loc, branches);
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeProductCard(
+    BuildContext context,
+    ProductModel product,
+    LocaleProvider loc,
+    List<VendorBranchModel> branches,
+  ) {
+    VendorBranchModel? branch;
+    try {
+      branch = branches.firstWhere((b) => b.vendorId == product.vendorId);
+    } catch (_) {
+      branch = branches.isNotEmpty ? branches.first : null;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ProductDetailsScreen(
+                product: product,
+                preselectedBranch: branch,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.propane_tank, color: AppTheme.primary, size: 32),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${product.brand} • ${product.variants.length} ${loc.isBangla ? 'অপশন' : 'options'}',
+                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Text(
+                          '${loc.isBangla ? 'মূল্য ' : 'Price '} ',
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                        ),
+                        MoneyText(
+                          money: product.minPrice,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primary,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textMuted),
             ],
           ),
         ),

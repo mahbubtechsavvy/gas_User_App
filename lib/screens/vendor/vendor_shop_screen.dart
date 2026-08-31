@@ -26,6 +26,10 @@ class _VendorShopScreenState extends State<VendorShopScreen> {
     });
   }
 
+  Future<void> _refresh() async {
+    await context.read<CatalogueProvider>().fetchProducts(branchId: widget.branch.id);
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = context.watch<LocaleProvider>();
@@ -36,10 +40,13 @@ class _VendorShopScreenState extends State<VendorShopScreen> {
       appBar: AppBar(
         title: Text(widget.branch.displayName),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // Branch Header Card
             Container(
               color: AppTheme.surface,
@@ -168,7 +175,8 @@ class _VendorShopScreenState extends State<VendorShopScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildProductItem(BuildContext context, ProductModel product, LocaleProvider loc) {

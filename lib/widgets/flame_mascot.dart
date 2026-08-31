@@ -30,34 +30,41 @@ class _FlameMascotState extends State<FlameMascot> with TickerProviderStateMixin
   late AnimationController _flickerController;
   late AnimationController _blinkController;
   late AnimationController _celebrateController;
+  late AnimationController _wiggleController;
 
   @override
   void initState() {
     super.initState();
 
-    // Floating bounce
+    // Fast, buoyant floating bounce (950ms vs old 2200ms)
     _floatController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
+      duration: const Duration(milliseconds: 950),
     )..repeat(reverse: true);
 
-    // Flame flicker/pulse
+    // Swift energetic flame flicker & pulse (500ms vs old 1400ms)
     _flickerController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(milliseconds: 500),
     )..repeat(reverse: true);
 
-    // Natural blinking
+    // Snappy natural blinking
     _blinkController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 3600),
+      duration: const Duration(milliseconds: 2200),
     )..repeat();
 
-    // Celebration jump
+    // Instant celebration jump (320ms)
     _celebrateController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 320),
     );
+
+    // Dynamic typing wiggle/tilt (280ms)
+    _wiggleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+    )..repeat(reverse: true);
   }
 
   @override
@@ -74,6 +81,7 @@ class _FlameMascotState extends State<FlameMascot> with TickerProviderStateMixin
     _flickerController.dispose();
     _blinkController.dispose();
     _celebrateController.dispose();
+    _wiggleController.dispose();
     super.dispose();
   }
 
@@ -85,63 +93,89 @@ class _FlameMascotState extends State<FlameMascot> with TickerProviderStateMixin
         _flickerController,
         _blinkController,
         _celebrateController,
+        _wiggleController,
       ]),
       builder: (context, child) {
-        final floatOffset = math.sin(_floatController.value * math.pi) * 8.0;
-        final flickerScale = 0.96 + (_flickerController.value * 0.08);
-        final isBlinking = _blinkController.value > 0.94 && _blinkController.value < 0.99;
-        final celebrateBounce = math.sin(_celebrateController.value * math.pi) * -16.0;
+        // Quick dynamic curves
+        final floatCurved = Curves.easeInOutSine.transform(_floatController.value);
+        final floatOffset = (floatCurved * 10.0) - 5.0;
+        final flickerScale = 0.95 + (_flickerController.value * 0.10);
+        final isBlinking = _blinkController.value > 0.92 && _blinkController.value < 0.98;
+        final celebrateBounce = math.sin(_celebrateController.value * math.pi) * -22.0;
+
+        // Dynamic typing wiggle tilt
+        double tiltAngle = 0.0;
+        if (widget.mood == MascotMood.typing) {
+          tiltAngle = (math.sin(_wiggleController.value * math.pi * 2) * 0.06);
+        } else if (widget.mood == MascotMood.celebrating) {
+          tiltAngle = (math.sin(_celebrateController.value * math.pi * 4) * 0.08);
+        }
 
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Speech Bubble (Optional)
-            if (widget.speechBubbleText != null)
-              Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFFF6600).withValues(alpha: 0.15),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                  border: Border.all(color: const Color(0xFFFFEDD5)),
-                ),
-                child: Text(
-                  widget.speechBubbleText!,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFC2410C),
-                  ),
-                ),
-              ),
+            // Quick Animated Speech Bubble (Scale & Fade)
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, animation) {
+                return ScaleTransition(
+                  scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+                  child: FadeTransition(opacity: animation, child: child),
+                );
+              },
+              child: widget.speechBubbleText != null
+                  ? Container(
+                      key: ValueKey<String>(widget.speechBubbleText!),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF6600).withValues(alpha: 0.18),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(color: const Color(0xFFFFD4B8), width: 1.5),
+                      ),
+                      child: Text(
+                        widget.speechBubbleText!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFFC2410C),
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(key: ValueKey('empty')),
+            ),
 
-            // Animated Flame Mascot Canvas
+            // Animated Flame Mascot Canvas with dynamic float, bounce, and quick tilt
             Transform.translate(
               offset: Offset(0, floatOffset + celebrateBounce),
-              child: SizedBox(
-                width: widget.size,
-                height: widget.size * 1.15,
-                child: CustomPaint(
-                  painter: _FlamePainter(
-                    flickerProgress: _flickerController.value,
-                    flickerScale: flickerScale,
-                    isBlinking: isBlinking,
-                    mood: widget.mood,
+              child: Transform.rotate(
+                angle: tiltAngle,
+                child: SizedBox(
+                  width: widget.size,
+                  height: widget.size * 1.15,
+                  child: CustomPaint(
+                    painter: _FlamePainter(
+                      flickerProgress: _flickerController.value,
+                      flickerScale: flickerScale,
+                      isBlinking: isBlinking,
+                      mood: widget.mood,
+                    ),
                   ),
                 ),
               ),
             ),
 
-            // Soft Hover Shadow Underneath
+            // Soft Dynamic Hover Shadow Underneath
             Transform.scale(
-              scale: 1.0 - (_floatController.value * 0.25),
+              scale: 1.0 - (floatCurved * 0.22),
               child: Container(
                 width: widget.size * 0.55,
                 height: 10,
@@ -149,7 +183,7 @@ class _FlameMascotState extends State<FlameMascot> with TickerProviderStateMixin
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFF6600).withValues(alpha: 0.20),
+                      color: const Color(0xFFFF6600).withValues(alpha: 0.22),
                       blurRadius: 14,
                       spreadRadius: 2,
                     ),

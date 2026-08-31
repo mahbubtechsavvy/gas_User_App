@@ -14,7 +14,6 @@ import '../order/order_tracking_screen.dart';
 import '../product/product_details_screen.dart';
 import '../profile/address_book_screen.dart';
 import '../search/search_screen.dart';
-import '../vendor/vendor_shop_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -267,17 +266,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // Categories Horizontal List
               if (catalogue.categories.isNotEmpty) ...[
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        loc.tr('categories'),
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  child: Text(
+                    loc.tr('categories'),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -321,38 +315,46 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
 
-              // Serving Branches Section
+              // Available Gas Cylinders & Products Section (Direct Product Storefront)
               const SizedBox(height: 24),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  loc.tr('nearbyVendors'),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      loc.isBangla ? 'গ্যাস সিলিন্ডার ও সামগ্রী' : 'Available Gas Cylinders',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    if (catalogue.products.isNotEmpty)
+                      Text(
+                        '${catalogue.products.length} ${loc.isBangla ? 'টি পণ্য' : 'items'}',
+                        style: const TextStyle(fontSize: 12, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),
 
-              if (catalogue.isLoading && branches.isEmpty)
+              if (catalogue.isLoading && catalogue.products.isEmpty)
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(32.0),
                     child: CircularProgressIndicator(),
                   ),
                 )
-              else if (branches.isEmpty)
+              else if (catalogue.products.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: const EdgeInsets.all(32.0),
                   child: Center(
                     child: Column(
                       children: [
-                        const Icon(Icons.storefront_outlined, size: 48, color: AppTheme.textMuted),
+                        const Icon(Icons.propane_tank_outlined, size: 54, color: AppTheme.textMuted),
                         const SizedBox(height: 12),
                         Text(
-                          loc.isBangla
-                              ? 'আপনার নির্বাচিত এলাকায় কোনো ব্রাঞ্চ পাওয়া যায়নি'
-                              : 'No gas branches currently serving this area',
+                          loc.isBangla ? 'বর্তমানে কোনো পণ্য পাওয়া যায়নি' : 'No products available currently',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: AppTheme.textSecondary),
+                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                         ),
                       ],
                     ),
@@ -363,44 +365,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: branches.length,
-                  itemBuilder: (context, index) {
-                    final branch = branches[index];
-                    return _buildBranchCard(context, branch, loc);
-                  },
-                ),
-
-              // Available Gas Cylinders & Products Section
-              if (catalogue.products.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        loc.isBangla ? 'গ্যাস সিলিন্ডার ও সামগ্রী' : 'Available Gas Cylinders',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        '${catalogue.products.length} ${loc.isBangla ? 'টি পণ্য' : 'items'}',
-                        style: const TextStyle(fontSize: 12, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: catalogue.products.length,
                   itemBuilder: (context, index) {
                     final product = catalogue.products[index];
                     return _buildHomeProductCard(context, product, loc, branches);
                   },
                 ),
-              ],
             ],
           ),
         ),
@@ -487,129 +457,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textMuted),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBranchCard(BuildContext context, VendorBranchModel branch, LocaleProvider loc) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () {
-          context.read<CatalogueProvider>().selectBranch(branch);
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => VendorShopScreen(branch: branch),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.store, color: AppTheme.primary, size: 28),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                branch.displayName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: AppTheme.textPrimary,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: branch.isOpen ? AppTheme.successLight : AppTheme.dangerLight,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                branch.isOpen ? loc.tr('openNow') : loc.tr('closed'),
-                                style: TextStyle(
-                                  color: branch.isOpen ? AppTheme.success : AppTheme.danger,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${branch.address}, ${branch.thana}',
-                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.star, color: Color(0xFFFFB800), size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${branch.rating.toStringAsFixed(1)} (${branch.totalRatings})',
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Icon(Icons.delivery_dining, size: 16, color: AppTheme.textMuted),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${loc.tr('deliveryFee')}: ',
-                        style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
-                      ),
-                      MoneyText(
-                        money: branch.deliveryFee,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textPrimary),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    loc.tr('viewProducts'),
-                    style: const TextStyle(
-                      color: AppTheme.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),

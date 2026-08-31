@@ -45,7 +45,7 @@ class CartProvider extends ChangeNotifier {
   }
 
   Future<bool> addToCart({
-    required VendorBranchModel branch,
+    VendorBranchModel? branch,
     required ProductModel product,
     required ProductVariantModel variant,
     int quantity = 1,
@@ -55,13 +55,17 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final body = <String, dynamic>{
+        'variantId': variant.id,
+        'quantity': quantity,
+      };
+      if (branch != null && branch.id.isNotEmpty && branch.id != 'br_default') {
+        body['branchId'] = branch.id;
+      }
+
       final res = await _apiClient.post(
         ApiEndpoints.cartItems,
-        body: {
-          'branchId': branch.id,
-          'variantId': variant.id,
-          'quantity': quantity,
-        },
+        body: body,
       );
 
       if (res is Map<String, dynamic>) {

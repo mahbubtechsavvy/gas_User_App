@@ -37,20 +37,26 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
 
     final catalogue = context.read<CatalogueProvider>();
+    VendorBranchModel? matchedBranch;
+    try {
+      matchedBranch = catalogue.branches.firstWhere((b) => b.vendorId == widget.product.vendorId);
+    } catch (_) {
+      matchedBranch = catalogue.branches.isNotEmpty ? catalogue.branches.first : null;
+    }
+
     _branch = widget.preselectedBranch ??
+        matchedBranch ??
         catalogue.selectedBranch ??
-        (catalogue.branches.isNotEmpty
-            ? catalogue.branches.first
-            : VendorBranchModel(
-                id: 'br_default',
-                vendorId: widget.product.vendorId,
-                vendorName: 'LPG Gas Vendor',
-                branchName: 'Main Branch',
-                phone: '01700000000',
-                address: 'Dhaka',
-                district: 'Dhaka',
-                thana: 'Gulshan',
-              ));
+        VendorBranchModel(
+          id: '',
+          vendorId: widget.product.vendorId,
+          vendorName: 'LPG Gas Vendor',
+          branchName: 'Main Branch',
+          phone: '01700000000',
+          address: 'Dhaka',
+          district: 'Dhaka',
+          thana: 'Gulshan',
+        );
   }
 
   void _addToCart() async {
@@ -60,7 +66,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     final loc = context.read<LocaleProvider>();
 
     final success = await cart.addToCart(
-      branch: _branch,
+      branch: _branch.id.isNotEmpty ? _branch : null,
       product: widget.product,
       variant: _selectedVariant!,
       quantity: _quantity,

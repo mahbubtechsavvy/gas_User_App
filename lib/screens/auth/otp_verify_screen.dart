@@ -95,8 +95,8 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
     if (success) {
       _startCountdown();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('A new 6-digit login code has been sent.'),
+        SnackBar(
+          content: Text(locText(context, 'A new login code has been sent.', 'নতুন লগইন কোড পাঠানো হয়েছে।')),
           backgroundColor: AppTheme.success,
         ),
       );
@@ -108,6 +108,10 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
         ),
       );
     }
+  }
+
+  String locText(BuildContext context, String en, String bn) {
+    return context.read<LocaleProvider>().isBangla ? bn : en;
   }
 
   @override
@@ -138,8 +142,8 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                   // Icon Header
                   Center(
                     child: Container(
-                      width: 80,
-                      height: 80,
+                      width: 76,
+                      height: 76,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: const Color(0xFFFF6600).withValues(alpha: 0.1),
@@ -147,19 +151,19 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                       child: const Center(
                         child: Icon(
                           Icons.mark_email_read_outlined,
-                          size: 40,
+                          size: 38,
                           color: Color(0xFFFF6600),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   // Title
                   Text(
                     loc.isBangla ? 'ভেরিফিকেশন কোড লিখুন' : 'Verify Your Email',
                     style: const TextStyle(
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFF0F172A),
                       letterSpacing: -0.5,
@@ -168,10 +172,11 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Recipient Chip
+                  // Recipient Chip (Responsive with Flexible to prevent overflow)
                   Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      constraints: const BoxConstraints(maxWidth: 340),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -180,25 +185,36 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.email, size: 14, color: Color(0xFFFF6600)),
+                          const Icon(Icons.email_outlined, size: 14, color: Color(0xFFFF6600)),
                           const SizedBox(width: 6),
-                          Text(
-                            widget.email,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E293B),
+                          Flexible(
+                            child: Text(
+                              widget.email,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1E293B),
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 8),
                           InkWell(
                             onTap: () => Navigator.pop(context),
-                            child: const Text(
-                              'Edit',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFFF6600),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF7ED),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                loc.isBangla ? 'বদলান' : 'Edit',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFFF6600),
+                                ),
                               ),
                             ),
                           ),
@@ -206,11 +222,11 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
 
                   // Verification Card
                   Container(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: const EdgeInsets.all(22.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(24),
@@ -229,9 +245,9 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              '6-DIGIT CODE',
-                              style: TextStyle(
+                            Text(
+                              loc.isBangla ? '৮-সংখ্যার কোড' : '8-DIGIT CODE',
+                              style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFF64748B),
@@ -240,7 +256,9 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                             ),
                             if (_secondsRemaining > 0)
                               Text(
-                                'Resend in ${_secondsRemaining}s',
+                                loc.isBangla
+                                    ? '${_secondsRemaining} সেকেন্ড বাকি'
+                                    : 'Resend in ${_secondsRemaining}s',
                                 style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
@@ -251,28 +269,28 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // Monospace OTP input field
+                        // Monospace OTP input field (Supports 8-digit and 6-digit codes)
                         TextFormField(
                           controller: _otpController,
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
-                          maxLength: 6,
+                          maxLength: 8,
                           style: const TextStyle(
-                            fontSize: 28,
+                            fontSize: 22,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: 12,
+                            letterSpacing: 6,
                             color: Color(0xFF0F172A),
                           ),
                           decoration: InputDecoration(
                             counterText: '',
-                            hintText: '••••••',
+                            hintText: '••••••••',
                             hintStyle: TextStyle(
                               color: Colors.grey.shade300,
-                              letterSpacing: 12,
+                              letterSpacing: 6,
                             ),
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 18),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 16),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -287,13 +305,13 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                             ),
                           ),
                           validator: (val) {
-                            if (val == null || val.trim().length != 6) {
+                            if (val == null || (val.trim().length != 8 && val.trim().length != 6)) {
                               return loc.tr('invalidOtp');
                             }
                             return null;
                           },
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 22),
 
                         CustomButton(
                           text: loc.tr('verifyOtp'),
@@ -301,7 +319,7 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                           icon: Icons.check_circle_outline_rounded,
                           onPressed: _verify,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
 
                         // Resend Button
                         Center(

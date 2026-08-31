@@ -95,111 +95,226 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(loc.tr('profileSetupTitle')),
-        backgroundColor: Colors.transparent,
-        automaticallyImplyLeading: false,
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        title: Text(
+          loc.isBangla ? 'প্রোফাইল ও ডেলিভারি ঠিকানা' : 'Complete Your Profile',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF0F172A),
+          ),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(20.0),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  loc.tr('profileSetupSubtitle'),
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 24),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          loc.tr('fullNameLabel'),
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                // Top Welcome Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7ED),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFFFEDD5)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF6600),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _nameController,
-                          decoration: InputDecoration(
-                            hintText: loc.tr('fullNameHint'),
-                            prefixIcon: const Icon(Icons.person_outline),
-                          ),
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Please enter your full name';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          loc.tr('phoneLabel'),
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _phoneController,
-                          keyboardType: TextInputType.phone,
-                          decoration: InputDecoration(
-                            hintText: loc.tr('phoneHint'),
-                            prefixIcon: const Icon(Icons.phone_android),
-                          ),
-                          validator: (val) {
-                            if (val == null || val.trim().length < 11) {
-                              return loc.tr('invalidPhone');
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        const Divider(),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Delivery Address (Optional)',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _addressController,
-                          decoration: const InputDecoration(
-                            labelText: 'House / Road / Flat / Area',
-                            hintText: 'e.g. House 12, Road 4, Sector 3',
-                            prefixIcon: Icon(Icons.home_outlined),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
+                        child: const Icon(Icons.person_pin_circle_outlined, color: Colors.white, size: 24),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _thanaController,
-                                decoration: const InputDecoration(labelText: 'Thana / Upazila'),
-                              ),
+                            Text(
+                              loc.isBangla ? 'এক ক্লিকে ডেলিভারি পেতে ঠিকানা যুক্ত করুন' : 'Setup Express Delivery',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFC2410C)),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _districtController,
-                                decoration: const InputDecoration(labelText: 'District'),
-                              ),
+                            const SizedBox(height: 2),
+                            Text(
+                              loc.isBangla
+                                  ? 'আপনার নাম ও ঠিকানা দিয়ে অর্ডার প্রক্রিয়া সম্পন্ন করুন।'
+                                  : 'Enter your details once for instant cylinder delivery.',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF9A3412)),
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Card 1: Personal Details
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.person_outline, color: Color(0xFFFF6600), size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            'Personal Information',
+                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF0F172A)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      Text(loc.tr('fullName'), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          hintText: loc.isBangla ? 'আপনার নাম' : 'e.g. Mahbubur Rahman',
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFFF6600), width: 1.5)),
+                        ),
+                        validator: (val) => val == null || val.trim().isEmpty ? 'Please enter your name' : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      Text(loc.tr('phoneLabel'), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          hintText: '017XXXXXXXX',
+                          prefixText: '+88 ',
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFFF6600), width: 1.5)),
+                        ),
+                        validator: (val) => val == null || val.trim().isEmpty ? 'Please enter your phone number' : null,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Card 2: Delivery Address
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.location_on_outlined, color: Color(0xFFFF6600), size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            'Primary Delivery Address',
+                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF0F172A)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('District *', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _districtController,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: const Color(0xFFF8FAFC),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  ),
+                                  validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Thana / Area *', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _thanaController,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: const Color(0xFFF8FAFC),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                                  ),
+                                  validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      const Text('House, Road, Apartment Details *', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _addressController,
+                        maxLines: 2,
+                        decoration: InputDecoration(
+                          hintText: 'e.g. House 14, Road 5, Block B, Niketan',
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFFF6600), width: 1.5)),
+                        ),
+                        validator: (val) => val == null || val.trim().isEmpty ? 'Please enter your street address' : null,
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 24),
+
                 CustomButton(
-                  text: loc.tr('getStarted'),
+                  text: loc.isBangla ? 'সম্পন্ন করুন ও গ্যাস অর্ডার শুরু করুন' : 'Complete Setup & Start Ordering',
                   isLoading: auth.isLoading,
+                  icon: Icons.check,
                   onPressed: _submit,
                 ),
               ],

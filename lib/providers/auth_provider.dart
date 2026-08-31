@@ -3,8 +3,6 @@ import '../core/api/api_client.dart';
 import '../core/api/api_endpoints.dart';
 import '../core/api/api_exception.dart';
 import '../core/storage/storage_service.dart';
-// DEV-LOGIN-BACKDOOR — remove with lib/dev/dev_login.dart.
-import '../dev/dev_login.dart';
 import '../models/user_model.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -70,48 +68,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// DEV-LOGIN-BACKDOOR — TEMPORARY. Signs in without an email code, for frontend testing.
-  /// Compiled out of release builds; see lib/dev/dev_login.dart.
-  Future<bool> devLogin() async {
-    if (!DevLogin.enabled) return false;
 
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
-    var profile = DevLogin.offlineProfile();
-    try {
-      final res = await _apiClient.post(
-        DevLogin.endpoint,
-        body: {'role': 'CUSTOMER'},
-        requiresAuth: false,
-      );
-      final accessToken = res is Map<String, dynamic> ? res['accessToken']?.toString() : null;
-      if (accessToken != null && accessToken.isNotEmpty) {
-        await _storageService.saveToken(accessToken);
-        final map = res as Map<String, dynamic>;
-        profile = {
-          ...profile,
-          if (map['userId'] != null) 'id': map['userId'],
-          if (map['email'] != null) 'email': map['email'],
-        };
-      } else {
-        await _storageService.saveToken(DevLogin.placeholderToken);
-      }
-    } catch (_) {
-      // The API is unreachable, or its own backdoor is off. Fall back to a local-only
-      // session so the UI stays browsable; authenticated calls will fail, by design.
-      await _storageService.saveToken(DevLogin.placeholderToken);
-    }
-
-    _currentUser = UserModel.fromJson(profile);
-    await _storageService.saveUserProfile(_currentUser!.toJson());
-    _otpSent = false;
-    _pendingEmail = null;
-    _isLoading = false;
-    notifyListeners();
-    return true;
-  }
 
   Future<bool> requestOtp(String email) async {
     _isLoading = true;

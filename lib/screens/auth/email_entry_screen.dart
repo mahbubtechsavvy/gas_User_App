@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/i18n/locale_provider.dart';
 import '../../core/theme/app_theme.dart';
-// DEV-LOGIN-BACKDOOR — remove this import and the button below with lib/dev/dev_login.dart.
-import '../../dev/dev_login.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/custom_button.dart';
 import '../home/main_navigation_shell.dart';
@@ -31,7 +29,7 @@ class _EmailEntryScreenState extends State<EmailEntryScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final auth = context.read<AuthProvider>();
-    final email = _emailController.text.trim();
+    final email = _emailController.text.trim().toLowerCase();
     final success = await auth.requestOtp(email);
 
     if (!mounted) return;
@@ -52,169 +50,275 @@ class _EmailEntryScreenState extends State<EmailEntryScreen> {
     }
   }
 
-  /// DEV-LOGIN-BACKDOOR — TEMPORARY. Skips the email code entirely; debug builds only.
-  void _devLogin() async {
-    final auth = context.read<AuthProvider>();
-    final success = await auth.devLogin();
-
-    if (!mounted) return;
-
-    if (success) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainNavigationShell()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dev login is not available in this build')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final loc = context.watch<LocaleProvider>();
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
-          TextButton.icon(
-            onPressed: () {
-              loc.setLocale(loc.isBangla ? 'en' : 'bn');
-            },
-            icon: const Icon(Icons.language, size: 18),
-            label: Text(loc.isBangla ? 'English' : 'বাংলা'),
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                loc.setLocale(loc.isBangla ? 'en' : 'bn');
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.language, size: 16, color: Color(0xFFFF6600)),
+                    const SizedBox(width: 6),
+                    Text(
+                      loc.isBangla ? 'English' : 'বাংলা',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
             child: Form(
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Hero Brand Emblem
                   Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryLight,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.local_gas_station,
-                        size: 56,
-                        color: AppTheme.primary,
-                      ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFFFF6600).withValues(alpha: 0.1),
+                          ),
+                        ),
+                        Container(
+                          width: 76,
+                          height: 76,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [Color(0xFFFF6600), Color(0xFFFF8C38)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0x40FF6600),
+                                blurRadius: 20,
+                                offset: Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.local_fire_department,
+                            size: 42,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  // Header Titles
                   Text(
-                    loc.tr('welcomeBack'),
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    loc.isBangla ? 'গ্যাস লাগবে অ্যাপে স্বাগতম' : 'Welcome to Gas Lagba',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                      letterSpacing: -0.5,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    loc.tr('authSubtitle'),
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    loc.isBangla
+                        ? 'আপনার ইমেইল দিয়ে সহজে ও দ্রুত সাইন ইন করুন'
+                        : 'Instant LPG Cylinder Delivery & Verified Brands Across Bangladesh',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF64748B),
+                      height: 1.4,
+                    ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 36),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            loc.tr('emailLabel'),
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                          ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            autocorrect: false,
-                            decoration: InputDecoration(
-                              hintText: loc.tr('emailHint'),
-                              prefixIcon: const Icon(Icons.email_outlined),
+                  const SizedBox(height: 32),
+
+                  // Main Interactive Sign In Card
+                  Container(
+                    padding: const EdgeInsets.all(24.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF7ED),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'STEP 1 OF 2',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFFFF6600),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
                             ),
-                            validator: (val) {
-                              if (val == null || val.trim().isEmpty) {
-                                return loc.tr('invalidEmail');
-                              }
-                              final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-                              if (!emailRegex.hasMatch(val.trim())) {
-                                return loc.tr('invalidEmail');
-                              }
-                              return null;
-                            },
+                            const Spacer(),
+                            const Icon(Icons.shield_outlined, size: 14, color: Color(0xFF10B981)),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'Passwordless OTP',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF10B981),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        Text(
+                          loc.tr('emailLabel'),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                            color: Color(0xFF1E293B),
                           ),
-                          const SizedBox(height: 20),
-                          CustomButton(
-                            text: loc.tr('sendOtp'),
-                            isLoading: auth.isLoading,
-                            onPressed: _submit,
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          autocorrect: false,
+                          decoration: InputDecoration(
+                            hintText: loc.tr('emailHint'),
+                            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                            prefixIcon: const Icon(Icons.mail_outline_rounded, color: Color(0xFF94A3B8), size: 20),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(color: Color(0xFFFF6600), width: 2),
+                            ),
                           ),
-                        ],
-                      ),
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) {
+                              return loc.tr('invalidEmail');
+                            }
+                            final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                            if (!emailRegex.hasMatch(val.trim())) {
+                              return loc.tr('invalidEmail');
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+
+                        CustomButton(
+                          text: loc.tr('sendOtp'),
+                          isLoading: auth.isLoading,
+                          icon: Icons.arrow_forward_rounded,
+                          onPressed: _submit,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),
-                  TextButton(
+
+                  // Guest Browsing Link
+                  TextButton.icon(
                     onPressed: () {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(builder: (_) => const MainNavigationShell()),
                       );
                     },
-                    child: Text(
-                      loc.isBangla ? 'অতিথি হিসেবে পণ্য দেখুন' : 'Browse Catalogue as Guest',
-                      style: const TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  // DEV-LOGIN-BACKDOOR — TEMPORARY, debug builds only. Remove with
-                  // lib/dev/dev_login.dart once the backend is complete.
-                  if (DevLogin.enabled) ...[
-                    const SizedBox(height: 4),
-                    OutlinedButton.icon(
-                      onPressed: auth.isLoading ? null : _devLogin,
-                      icon: const Icon(Icons.bug_report_outlined, size: 18),
-                      label: const Text('Dev Login'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.orange.shade900,
-                        side: BorderSide(color: Colors.orange.shade700),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                    icon: const Icon(Icons.storefront_outlined, size: 18, color: Color(0xFF475569)),
+                    label: Text(
+                      loc.isBangla ? 'অতিথি হিসেবে গ্যাস সিলিন্ডার দেখুন' : 'Explore Storefront as Guest',
+                      style: const TextStyle(
+                        color: Color(0xFF475569),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Frontend testing only — removed before release.',
-                      style: TextStyle(fontSize: 12, color: Colors.orange.shade900),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                  ),
                   const SizedBox(height: 12),
+
+                  // Help & Support Link
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.help_outline, size: 16, color: AppTheme.textMuted),
-                      const SizedBox(width: 4),
+                      const Icon(Icons.help_outline_rounded, size: 15, color: Color(0xFF94A3B8)),
+                      const SizedBox(width: 6),
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => const SupportScreen()),
                           );
                         },
+                        style: TextButton.styleFrom(padding: EdgeInsets.zero),
                         child: Text(
                           loc.tr('accountRecovery'),
-                          style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+                          style: const TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],

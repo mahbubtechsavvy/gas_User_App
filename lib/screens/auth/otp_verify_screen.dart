@@ -116,115 +116,211 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(loc.tr('otpVerification')),
         backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF0F172A)),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
             child: Form(
               key: _formKey,
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Icon Header
                   Center(
                     child: Container(
-                      padding: const EdgeInsets.all(20),
+                      width: 80,
+                      height: 80,
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryLight,
                         shape: BoxShape.circle,
+                        color: const Color(0xFFFF6600).withValues(alpha: 0.1),
                       ),
-                      child: const Icon(
-                        Icons.mark_email_read_outlined,
-                        size: 48,
-                        color: AppTheme.primary,
+                      child: const Center(
+                        child: Icon(
+                          Icons.mark_email_read_outlined,
+                          size: 40,
+                          color: Color(0xFFFF6600),
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  // Title
                   Text(
-                    loc.tr('otpVerification'),
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    loc.isBangla ? 'ভেরিফিকেশন কোড লিখুন' : 'Verify Your Email',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                      letterSpacing: -0.5,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    '${loc.tr('otpSubtitle')} ${widget.email}',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+
+                  // Recipient Chip
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
+                          const Icon(Icons.email, size: 14, color: Color(0xFFFF6600)),
+                          const SizedBox(width: 6),
                           Text(
-                            loc.tr('enterOtp'),
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                          ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _otpController,
-                            keyboardType: TextInputType.number,
-                            textAlign: TextAlign.center,
-                            maxLength: 8,
+                            widget.email,
                             style: const TextStyle(
-                              fontSize: 22,
-                              letterSpacing: 4,
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
                             ),
-                            decoration: InputDecoration(
-                              counterText: '',
-                              hintText: 'Enter code',
-                              hintStyle: TextStyle(
-                                fontSize: 18,
-                                letterSpacing: 2,
-                                color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(width: 6),
+                          InkWell(
+                            onTap: () => Navigator.pop(context),
+                            child: const Text(
+                              'Edit',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFFF6600),
                               ),
                             ),
-                            validator: (val) {
-                              if (val == null || val.trim().length < 6 || val.trim().length > 8) {
-                                return loc.tr('invalidOtp');
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 20),
-                          CustomButton(
-                            text: loc.tr('verifyAndLogin'),
-                            isLoading: auth.isLoading,
-                            onPressed: _verify,
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (_secondsRemaining > 0)
-                        Text(
-                          '${loc.tr('resendOtpIn')} $_secondsRemaining${loc.tr('seconds')}',
-                          style: const TextStyle(color: AppTheme.textMuted, fontSize: 14),
-                        )
-                      else
-                        TextButton(
-                          onPressed: _resend,
-                          child: Text(
-                            loc.tr('resendOtp'),
-                            style: const TextStyle(
-                              color: AppTheme.primary,
-                              fontWeight: FontWeight.bold,
+                  const SizedBox(height: 32),
+
+                  // Verification Card
+                  Container(
+                    padding: const EdgeInsets.all(24.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              '6-DIGIT CODE',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF64748B),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            if (_secondsRemaining > 0)
+                              Text(
+                                'Resend in ${_secondsRemaining}s',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFFFF6600),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Monospace OTP input field
+                        TextFormField(
+                          controller: _otpController,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          maxLength: 6,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 12,
+                            color: Color(0xFF0F172A),
+                          ),
+                          decoration: InputDecoration(
+                            counterText: '',
+                            hintText: '••••••',
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade300,
+                              letterSpacing: 12,
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 18),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(color: Color(0xFFFF6600), width: 2),
+                            ),
+                          ),
+                          validator: (val) {
+                            if (val == null || val.trim().length != 6) {
+                              return loc.tr('invalidOtp');
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+
+                        CustomButton(
+                          text: loc.tr('verifyOtp'),
+                          isLoading: auth.isLoading,
+                          icon: Icons.check_circle_outline_rounded,
+                          onPressed: _verify,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Resend Button
+                        Center(
+                          child: TextButton(
+                            onPressed: _secondsRemaining == 0 ? _resend : null,
+                            child: Text(
+                              loc.tr('resendOtp'),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: _secondsRemaining == 0
+                                    ? const Color(0xFFFF6600)
+                                    : const Color(0xFF94A3B8),
+                              ),
                             ),
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
